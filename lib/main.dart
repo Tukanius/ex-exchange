@@ -1,13 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
+import 'package:wx_exchange_flutter/provider/exchange_provider.dart';
+import 'package:wx_exchange_flutter/provider/general_provider.dart';
 import 'package:wx_exchange_flutter/provider/user_provider.dart';
+import 'package:wx_exchange_flutter/services/dialog.dart';
+import 'package:wx_exchange_flutter/src/auth/check-biometric.dart';
+import 'package:wx_exchange_flutter/src/auth/foget_password_page.dart';
+import 'package:wx_exchange_flutter/src/auth/login_page.dart';
+import 'package:wx_exchange_flutter/src/auth/otp_page.dart';
+import 'package:wx_exchange_flutter/src/auth/password_page.dart';
+import 'package:wx_exchange_flutter/src/auth/register_page.dart';
+import 'package:wx_exchange_flutter/src/exchange_page/exchange_order/order_info_page.dart';
+import 'package:wx_exchange_flutter/src/exchange_page/exchange_order/payment_info_page.dart';
+import 'package:wx_exchange_flutter/src/exchange_page/signature/signature_check_page.dart';
+import 'package:wx_exchange_flutter/src/history_page/exchange.dart';
+import 'package:wx_exchange_flutter/src/history_page/transfer_detail.dart';
+import 'package:wx_exchange_flutter/src/main_page.dart';
+import 'package:wx_exchange_flutter/src/transfer_page/remittance/remittance.dart';
+import 'package:wx_exchange_flutter/src/profile_page/profile_page.dart';
+import 'package:wx_exchange_flutter/src/profile_page/settings/address_settings.dart';
+import 'package:wx_exchange_flutter/src/profile_page/settings/email_settings.dart';
+import 'package:wx_exchange_flutter/src/profile_page/settings/password_settings.dart';
+import 'package:wx_exchange_flutter/src/profile_page/settings/phone_settings.dart';
 import 'package:wx_exchange_flutter/src/splash_page/splash_page.dart';
+import 'package:wx_exchange_flutter/widget/dialog/dialog_manager.dart';
 
 void main() async {
-  runApp(
-    MyApp(),
-  );
+  WidgetsFlutterBinding.ensureInitialized();
+
+  locator.registerLazySingleton(() => DialogService());
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]).then((_) {
+    runApp(MyApp());
+  });
 }
+
+GetIt locator = GetIt.instance;
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -22,18 +54,20 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => GeneralProvider()),
+        ChangeNotifierProvider(create: (_) => ExchangeProvider()),
       ],
       child: Consumer<UserProvider>(
         builder: (context, userProvider, _) {
           return MaterialApp(
-            // builder: (context, widget) => Navigator(
-            //   onGenerateRoute: (settings) => MaterialPageRoute(
-            //     builder: (context) =>
-            //         DialogManager(child: loading(context, widget)),
-            //   ),
-            // ),
+            builder: (context, widget) => Navigator(
+              onGenerateRoute: (settings) => MaterialPageRoute(
+                builder: (context) =>
+                    DialogManager(child: loading(context, widget)),
+              ),
+            ),
             title: 'Green Score',
-            theme: ThemeData(useMaterial3: true),
+            theme: ThemeData(useMaterial3: false),
             debugShowCheckedModeBanner: false,
             initialRoute: SplashScreen.routeName,
             onGenerateRoute: (RouteSettings settings) {
@@ -42,15 +76,120 @@ class _MyAppState extends State<MyApp> {
                   return MaterialPageRoute(builder: (context) {
                     return const SplashScreen();
                   });
+                case LoginPage.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const LoginPage();
+                  });
+                case RegisterPage.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const RegisterPage();
+                  });
+                case OtpPage.routeName:
+                  OtpPageArguments arguments =
+                      settings.arguments as OtpPageArguments;
+                  return MaterialPageRoute(builder: (context) {
+                    return OtpPage(
+                      method: arguments.method,
+                      username: arguments.username,
+                    );
+                  });
+                case ForgetPasswordPage.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const ForgetPasswordPage();
+                  });
+                case PassWordPage.routeName:
+                  PassWordPageArguments arguments =
+                      settings.arguments as PassWordPageArguments;
+                  return MaterialPageRoute(builder: (context) {
+                    return PassWordPage(
+                      method: arguments.method,
+                    );
+                  });
+                case MainPage.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const MainPage();
+                  });
+                case SignaturePage.routeName:
+                  SignaturePageArguments arguments =
+                      settings.arguments as SignaturePageArguments;
+                  return MaterialPageRoute(builder: (context) {
+                    return SignaturePage(
+                      pushedFrom: arguments.pushedFrom,
+                    );
+                  });
+                case OrderInfoPage.routeName:
+                  OrderInfoPageArguments arguments =
+                      settings.arguments as OrderInfoPageArguments;
+                  return MaterialPageRoute(builder: (context) {
+                    return OrderInfoPage(
+                      signature: arguments.signature,
+                    );
+                  });
 
-                // case CollectScooterScore.routeName:
-                //   CollectScooterScoreArguments arguments =
-                //       settings.arguments as CollectScooterScoreArguments;
-                //   return MaterialPageRoute(builder: (context) {
-                //     return CollectScooterScore(
-                //       id: arguments.id,
-                //     );
-                //   });
+                case PaymentDetailPage.routeName:
+                  PaymentDetailPageArguments arguments =
+                      settings.arguments as PaymentDetailPageArguments;
+                  return MaterialPageRoute(builder: (context) {
+                    return PaymentDetailPage(
+                      data: arguments.data,
+                    );
+                  });
+                case RemittancePage.routeName:
+                  RemittancePageArguments arguments =
+                      settings.arguments as RemittancePageArguments;
+                  return MaterialPageRoute(builder: (context) {
+                    return RemittancePage(
+                      signature: arguments.signature,
+                    );
+                  });
+                case TransferDetailPage.routeName:
+                  TransferDetailPageArguments arguments =
+                      settings.arguments as TransferDetailPageArguments;
+                  return MaterialPageRoute(builder: (context) {
+                    return TransferDetailPage(
+                      data: arguments.data,
+                    );
+                  });
+                case OrderDetailPage.routeName:
+                  OrderDetailPageArguments arguments =
+                      settings.arguments as OrderDetailPageArguments;
+                  return MaterialPageRoute(builder: (context) {
+                    return OrderDetailPage(
+                      data: arguments.data,
+                    );
+                  });
+                case ProfilePage.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const ProfilePage();
+                  });
+                case PhoneSettingsPage.routeName:
+                  PhoneSettingsPageArguments arguments =
+                      settings.arguments as PhoneSettingsPageArguments;
+                  return MaterialPageRoute(builder: (context) {
+                    return PhoneSettingsPage(
+                      phone: arguments.phone,
+                    );
+                  });
+                case EmailSettingsPage.routeName:
+                  EmailSettingsPageArguments arguments =
+                      settings.arguments as EmailSettingsPageArguments;
+                  return MaterialPageRoute(builder: (context) {
+                    return EmailSettingsPage(
+                      email: arguments.email,
+                    );
+                  });
+                case AddressSettingsPage.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const AddressSettingsPage();
+                  });
+                case PasswordSettingsPage.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const PasswordSettingsPage();
+                  });
+                case CheckBiometric.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const CheckBiometric();
+                  });
                 default:
                   return MaterialPageRoute(
                     builder: (_) => const SplashScreen(),
