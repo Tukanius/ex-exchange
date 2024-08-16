@@ -1,13 +1,13 @@
 part of '../../models/general_ models/bank_name.dart';
 
-BankName _$BankNameFromJson(Map<String, dynamic> json) {
-  return BankName(
+BankNames _$BankNamesFromJson(Map<String, dynamic> json) {
+  return BankNames(
     code: json['code'] != null ? json['code'] as String : null,
     name: json['name'] != null ? json['name'] as String : null,
   );
 }
 
-Map<String, dynamic> _$BankNameToJson(BankName instance) {
+Map<String, dynamic> _$BankNamesToJson(BankNames instance) {
   Map<String, dynamic> json = {};
 
   if (instance.code != null) json['code'] = instance.code;

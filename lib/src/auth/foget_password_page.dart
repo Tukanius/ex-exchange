@@ -120,11 +120,11 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
               child: Column(
                 children: [
                   AnimatedTextField(
-                    borderColor: borderBlackColor,
+                    borderColor: blue,
                     colortext: blackAccent,
                     name: 'username',
                     focusNode: phone,
-                    labelText: 'Утасны дугаар эсвэл имэйл',
+                    labelText: 'И-мэйл',
                     controller: phoneController,
                     suffixIcon: phone.hasFocus == true
                         ? GestureDetector(

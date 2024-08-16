@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -24,13 +27,18 @@ class SignaturePage extends StatefulWidget {
   State<SignaturePage> createState() => _SignaturePageState();
 }
 
-class _SignaturePageState extends State<SignaturePage> {
+class _SignaturePageState extends State<SignaturePage> with AfterLayoutMixin {
   Uint8List? exportedImage;
 
   SignatureController controller = SignatureController(
     penStrokeWidth: 3,
     penColor: black,
   );
+  @override
+  FutureOr<void> afterFirstLayout(BuildContext context) {
+    print(widget.pushedFrom);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

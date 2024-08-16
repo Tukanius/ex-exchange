@@ -32,6 +32,8 @@ User _$UserFromJson(Map<String, dynamic> json) {
     otpMethod: json['otpMethod'] != null ? json['otpMethod'] as String : null,
     message: json['message'] != null ? json['message'] as String : null,
     contract: json['contract'] != null ? json['contract'] as bool : null,
+    deviceToken:
+        json['deviceToken'] != null ? json['deviceToken'] as String : null,
   );
 }
 
@@ -63,6 +65,7 @@ Map<String, dynamic> _$UserToJson(User instance) {
   if (instance.otpMethod != null) json['otpMethod'] = instance.otpMethod;
   if (instance.message != null) json['message'] = instance.message;
   if (instance.contract != null) json['contract'] = instance.contract;
+  if (instance.deviceToken != null) json['deviceToken'] = instance.deviceToken;
 
   return json;
 }

@@ -87,7 +87,7 @@ class _EmailSettingsPageState extends State<EmailSettingsPage> {
               labelText: 'И-Мейл',
               name: 'email',
               focusNode: email,
-              borderColor: borderBlackColor,
+              borderColor: blue,
               colortext: dark,
               controller: emailController,
               suffixIcon: email.hasFocus == true

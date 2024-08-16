@@ -78,7 +78,7 @@ class _AddressSettingsPageState extends State<AddressSettingsPage> {
               labelText: 'Гэрийн хаяг',
               name: 'address',
               focusNode: address,
-              borderColor: borderBlackColor,
+              borderColor: blue,
               colortext: dark,
               controller: addressController,
               suffixIcon: address.hasFocus == true

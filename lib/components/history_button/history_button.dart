@@ -48,7 +48,7 @@ class _TradeHistoryButtonState extends State<TradeHistoryButton> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      ' ${widget.data.toCurrency == 'MNT' ? '₮' : widget.data.toCurrency == "JPY" ? '¥' : '₮'} ${widget.data.toAmount}',
+                      ' ${widget.data.fromCurrency == 'MNT' ? '₮' : widget.data.fromCurrency == "JPY" ? '¥' : '₮'} ${Utils().formatText(widget.data.fromAmount)}',
                       style: TextStyle(
                         color: dark,
                         fontSize: 14,
@@ -79,9 +79,9 @@ class _TradeHistoryButtonState extends State<TradeHistoryButton> {
                       fontWeight: FontWeight.w400,
                     ),
                   )
-                : widget.data.tradeStatus == "SUCCESS"
+                : widget.data.tradeStatus == "PAID"
                     ? Text(
-                        'Амжилттай',
+                        'Төлбөр төлөгдсөн',
                         style: TextStyle(
                           color: success,
                           fontSize: 13,

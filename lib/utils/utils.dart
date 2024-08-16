@@ -16,6 +16,25 @@ class Utils {
     return result;
   }
 
+  formatText(value) {
+    final NumberFormat formatter = NumberFormat('#,##0');
+    return formatter.format(value);
+  }
+
+  String formatCurrencyCustom(num? value) {
+    if (value == null) return '0.00';
+
+    final NumberFormat formatter = NumberFormat('#,##0.00', 'en_US');
+    return formatter.format(value);
+  }
+
+  String formatTextCustom(num? value) {
+    if (value == null) return '0';
+
+    final NumberFormat formatter = NumberFormat('#,##0');
+    return formatter.format(value);
+  }
+
   static String formatUTC8(String utcDateString) {
     // Parse the UTC date string into a DateTime object
     DateTime utcDate = DateTime.parse(utcDateString).toUtc();

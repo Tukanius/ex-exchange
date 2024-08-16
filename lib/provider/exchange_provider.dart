@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class ExchangeProvider extends ChangeNotifier {
-  String mnt = '0';
+  num mnt = 0;
   String currency = '0';
   String receiver = '';
   String bankid = '';
   String bank = '';
   String phone = '';
   String toValue = '';
-  String totalAmount = '';
-  String fee = '';
+  num totalAmount = 0;
+  num fee = 0;
   String toAmount = '';
 
   String purpose = '';
@@ -19,11 +19,11 @@ class ExchangeProvider extends ChangeNotifier {
   String bankCardNo = '';
 
   updateAll({
-    required String newmnt,
+    required num newmnt,
     required String newcurrency,
     required String newtoValue,
-    required String newtotalAmount,
-    required String newfee,
+    required num newtotalAmount,
+    required num newfee,
     required String newtoAmount,
   }) {
     mnt = newmnt;
@@ -48,22 +48,30 @@ class ExchangeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  String BankName = '';
+  String AccountNumber = '';
+  String SwiftCode = '';
+  String BranchName = '';
+  String BranchAddress = '';
+  String AccountName = '';
+  String tradePurpose = '';
+
   toUpdateTransfer({
-    required String newuserName,
+    required String newBankName,
+    required String newAccountNumber,
+    required String newSwiftCode,
+    required String newBranchName,
+    required String newBranchAddress,
+    required String newAccountName,
     required String newPurpose,
-    required String newnameEng,
-    required String newidCardNo,
-    required String newcityName,
-    required String newPhone,
-    required String newbankCardNo,
   }) {
-    phone = newPhone;
-    receiver = newuserName;
-    purpose = newPurpose;
-    nameEng = newnameEng;
-    idCardNo = newidCardNo;
-    cityName = newcityName;
-    bankCardNo = newbankCardNo;
+    BankName = newBankName;
+    AccountNumber = newAccountNumber;
+    SwiftCode = newSwiftCode;
+    BranchName = newBranchName;
+    BranchAddress = newBranchAddress;
+    AccountName = newAccountName;
+    tradePurpose = newPurpose;
 
     notifyListeners();
   }

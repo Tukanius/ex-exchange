@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:provider/provider.dart';
 import 'package:wx_exchange_flutter/components/back_arrow/back_arrow.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/models/user.dart';
 import 'package:wx_exchange_flutter/provider/user_provider.dart';
+import 'package:wx_exchange_flutter/src/auth/login_page.dart';
 import 'package:wx_exchange_flutter/src/splash_page/splash_page.dart';
 import 'package:wx_exchange_flutter/widget/ui/animated_text_field/animated_textfield.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
@@ -162,7 +164,7 @@ class _PassWordPageState extends State<PassWordPage> {
             ),
             GestureDetector(
               onTap: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed(LoginPage.routeName);
               },
               child: ArrowBack(),
             ),
@@ -208,7 +210,7 @@ class _PassWordPageState extends State<PassWordPage> {
                 children: [
                   AnimatedTextField(
                     obscureText: isVisible,
-                    borderColor: borderBlackColor,
+                    borderColor: blue,
                     colortext: blackAccent,
                     name: 'password',
                     focusNode: password,
@@ -247,15 +249,20 @@ class _PassWordPageState extends State<PassWordPage> {
                             ],
                           )
                         : null,
+                    validator: FormBuilderValidators.compose([
+                      (value) {
+                        return validatePassword(value.toString(), context);
+                      }
+                    ]),
                   ),
                   SizedBox(
                     height: 16,
                   ),
                   AnimatedTextField(
                     obscureText: isVisible1,
-                    borderColor: borderBlackColor,
+                    borderColor: blue,
                     colortext: blackAccent,
-                    name: 'password',
+                    name: 'password1',
                     focusNode: passwordRepeat,
                     labelText: 'Нууц үг давтан хийх',
                     controller: passwordRepeatController,
@@ -292,6 +299,17 @@ class _PassWordPageState extends State<PassWordPage> {
                             ],
                           )
                         : null,
+                    validator: FormBuilderValidators.compose([
+                      FormBuilderValidators.required(
+                          errorText: "Нууц үгээ давтан оруулна уу"),
+                      (value) {
+                        if (fbkey.currentState?.fields['password']?.value !=
+                            value) {
+                          return 'Оруулсан нууц үгтэй таарахгүй байна';
+                        }
+                        return null;
+                      }
+                    ]),
                   ),
                 ],
               ),
@@ -306,10 +324,26 @@ class _PassWordPageState extends State<PassWordPage> {
               buttonColor: blue,
               isLoading: false,
               labelText: 'Болсон',
-            )
+            ),
+            SizedBox(
+              height: 24,
+            ),
           ],
         ),
       ),
     );
+  }
+}
+
+String? validatePassword(String value, context) {
+  RegExp regex = RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$');
+  if (value.isEmpty) {
+    return 'Нууц үгээ оруулна уу';
+  } else {
+    if (!regex.hasMatch(value)) {
+      return 'Нууц үг багадаа 1 том үсэг 1 тоо авна';
+    } else {
+      return null;
+    }
   }
 }

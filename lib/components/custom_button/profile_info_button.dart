@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
@@ -7,12 +9,15 @@ class ProfileInfoButton extends StatefulWidget {
   final String text;
   final String svgPath;
   final bool? dan;
+  final bool? danVerify;
+
   ProfileInfoButton({
     required this.onClick,
     Key? key,
     required this.text,
     required this.svgPath,
-    this.dan,
+    this.dan = false,
+    this.danVerify,
   }) : super(key: key);
 
   @override
@@ -56,19 +61,22 @@ class _ProfileInfoButtonState extends State<ProfileInfoButton> {
             ),
             Row(
               children: [
-                widget.dan == true
-                    ? SvgPicture.asset('assets/svg/secured.svg')
-                    : SizedBox(),
-                SizedBox(
-                  width: 16,
-                ),
-                Icon(
-                  Icons.arrow_forward_ios_outlined,
-                  color: dark,
-                  size: 14,
-                ),
+                if (widget.dan == true && widget.danVerify == true)
+                  SvgPicture.asset('assets/svg/secured.svg')
+                else if (widget.danVerify == false)
+                  SvgPicture.asset(
+                    'assets/svg/secured.svg',
+                    color: dark,
+                  ),
+                if (widget.danVerify == false) SizedBox(width: 16),
+                if (widget.dan == false || widget.danVerify == false)
+                  Icon(
+                    Icons.arrow_forward_ios_outlined,
+                    color: dark,
+                    size: 14,
+                  ),
               ],
-            ),
+            )
           ],
         ),
       ),

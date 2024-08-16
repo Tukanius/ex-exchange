@@ -3,25 +3,24 @@ part '../parts/receiver.dart';
 class Receiver {
   String? id;
   String? type;
-  String? name;
+  String? accountName;
   String? bankName;
-  String? bankCardNo;
+  String? accountNumber;
   String? phone;
-
-  String? nameEng;
-  String? cityName;
-  String? idCardNo;
+  String? branchName;
+  String? branchAddress;
+  String? swiftCode;
 
   Receiver({
     this.id,
     this.type,
-    this.name,
+    this.accountName,
     this.bankName,
-    this.bankCardNo,
+    this.accountNumber,
     this.phone,
-    this.nameEng,
-    this.cityName,
-    this.idCardNo,
+    this.branchName,
+    this.branchAddress,
+    this.swiftCode,
   });
   static $fromJson(Map<String, dynamic> json) => _$ReceiverFromJson(json);
 

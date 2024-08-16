@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.1+28
 
 environment:
   sdk: ">=3.3.4 <4.0.0"
@@ -46,17 +46,22 @@ dependencies:
   another_flushbar: ^1.12.30
   local_auth: ^2.2.0
   flutter_secure_storage: ^9.2.2
-  form_builder_validators: ^9.0.0
+  form_builder_validators: ^9.1.0
   pull_to_refresh: ^2.0.0
   flutter_keyboard_visibility: ^6.0.0
+  # firebase_core: ^3.3.0
+  # firebase_messaging: ^15.0.4
+  flutter_local_notifications: ^17.2.2
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
+  firebase_core: ^3.3.0
+  firebase_messaging: ^15.0.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
+  flutter_launcher_icons: ^0.13.1
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -66,7 +71,11 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
-
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
 # The following section is specific to Flutter packages.
 flutter:
   # The following line ensures that the Material Icons font is
@@ -79,6 +88,7 @@ flutter:
     - assets/images/
     - assets/svg/
     - assets/lottie/
+    - assets/icon/
     - assets/
 
   # An image asset can refer to one or more resolution-specific "variants", see

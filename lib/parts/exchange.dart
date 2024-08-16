@@ -16,15 +16,19 @@ Exchange _$ExchangeFromJson(Map<String, dynamic> json) {
     sign: json['sign'] != null ? json['sign'] as String : null,
     rate: json['rate'] != null ? json['rate'] as num : null,
     bankName: json['bankName'] != null ? json['bankName'] as String : null,
-    name: json['name'] != null ? json['name'] as String : null,
-    bankCardNo:
-        json['bankCardNo'] != null ? json['bankCardNo'] as String : null,
-    phone: json['phone'] != null ? json['phone'] as String : null,
+    accountName:
+        json['accountName'] != null ? json['accountName'] as String : null,
+    accountNumber:
+        json['accountNumber'] != null ? json['accountNumber'] as String : null,
+    // phone: json['phone'] != null ? json['phone'] as String : null,
     contract: json['contract'] != null ? json['contract'] as bool : null,
     purpose: json['purpose'] != null ? json['purpose'] as String : null,
-    nameEng: json['nameEng'] != null ? json['nameEng'] as String : null,
-    idCardNo: json['idCardNo'] != null ? json['idCardNo'] as String : null,
-    cityName: json['cityName'] != null ? json['cityName'] as String : null,
+    swiftCode: json['swiftCode'] != null ? json['swiftCode'] as String : null,
+    branchName:
+        json['branchName'] != null ? json['branchName'] as String : null,
+
+    branchAddress:
+        json['branchAddress'] != null ? json['branchAddress'] as String : null,
   );
 }
 
@@ -44,14 +48,17 @@ Map<String, dynamic> _$ExchangeToJson(Exchange instance) {
   if (instance.rate != null) json['rate'] = instance.rate;
 
   if (instance.bankName != null) json['bankName'] = instance.bankName;
-  if (instance.name != null) json['name'] = instance.name;
-  if (instance.bankCardNo != null) json['bankCardNo'] = instance.bankCardNo;
-  if (instance.phone != null) json['phone'] = instance.phone;
+  if (instance.accountName != null) json['accountName'] = instance.accountName;
+  if (instance.accountNumber != null)
+    json['accountNumber'] = instance.accountNumber;
+  // if (instance.phone != null) json['phone'] = instance.phone;
   if (instance.contract != null) json['contract'] = instance.contract;
   if (instance.purpose != null) json['purpose'] = instance.purpose;
-  if (instance.nameEng != null) json['nameEng'] = instance.nameEng;
-  if (instance.idCardNo != null) json['idCardNo'] = instance.idCardNo;
-  if (instance.cityName != null) json['cityName'] = instance.cityName;
+  if (instance.swiftCode != null) json['swiftCode'] = instance.swiftCode;
+  if (instance.branchName != null) json['branchName'] = instance.branchName;
+
+  if (instance.branchAddress != null)
+    json['branchAddress'] = instance.branchAddress;
 
   return json;
 }

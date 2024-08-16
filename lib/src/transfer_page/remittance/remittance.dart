@@ -8,8 +8,11 @@ import 'package:wx_exchange_flutter/api/exchange_api.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/models/account_transfer.dart';
 import 'package:wx_exchange_flutter/models/exchange.dart';
+import 'package:wx_exchange_flutter/models/general.dart';
 import 'package:wx_exchange_flutter/provider/exchange_provider.dart';
+import 'package:wx_exchange_flutter/provider/general_provider.dart';
 import 'package:wx_exchange_flutter/src/exchange_page/exchange_order/payment_info_page.dart';
+import 'package:wx_exchange_flutter/utils/utils.dart';
 import 'package:wx_exchange_flutter/widget/ui/animated_text_field/animated_textfield.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
 
@@ -35,35 +38,46 @@ class _RemittancePageState extends State<RemittancePage> {
   Exchange data = Exchange();
   AccountTransfer payData = AccountTransfer();
   bool isLoading = false;
-  onSubmit(ExchangeProvider tools) async {
+  onSubmit(ExchangeProvider tools, General general) async {
+    print('=========general=========');
+    print(general.purposeTypes!.first.name);
+    print('=========general=========');
+
     try {
       setState(() {
         isLoading = true;
       });
+
+      String? matchedPurpose;
+      for (var purposeType in general.purposeTypes!) {
+        if (purposeType.name == tools.tradePurpose) {
+          matchedPurpose = purposeType.code;
+          break;
+        }
+      }
+      data.purpose = matchedPurpose ?? 'VEHICLE';
       data.type = "TRANSFER";
       data.fromCurrency = "JPY";
-      data.fromAmount = num.parse(tools.mnt);
+      data.fromAmount = tools.mnt;
       data.toCurrency = "MNT";
       data.toAmount = num.parse(tools.toAmount);
       data.rate = num.parse(tools.toValue);
-      data.fee = num.parse(tools.fee);
-      // data.bankName = tools.bank;
-      data.name = tools.receiver;
-      data.bankCardNo = tools.bankCardNo;
+      data.fee = tools.fee;
       data.sign = base64Encode(widget.signature);
-      data.phone = tools.phone;
       data.contract = true;
-
-      data.purpose = 'FOOD';
-
-      data.nameEng = tools.nameEng;
-      data.idCardNo = tools.idCardNo;
-      data.cityName = tools.cityName;
+      data.bankName = tools.BankName;
+      data.accountNumber = tools.AccountNumber;
+      data.swiftCode = tools.SwiftCode;
+      data.branchName = tools.BranchName;
+      data.branchAddress = tools.BranchAddress;
+      data.accountName = tools.AccountName;
 
       payData = await ExchangeApi().onTrade(data);
+
       setState(() {
         isLoading = false;
       });
+
       Navigator.of(context).pushNamed(
         PaymentDetailPage.routeName,
         arguments: PaymentDetailPageArguments(
@@ -81,7 +95,7 @@ class _RemittancePageState extends State<RemittancePage> {
   @override
   Widget build(BuildContext context) {
     var tools = Provider.of<ExchangeProvider>(context, listen: true);
-
+    var general = Provider.of<GeneralProvider>(context, listen: true).general;
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -100,7 +114,7 @@ class _RemittancePageState extends State<RemittancePage> {
           ),
         ),
         title: Text(
-          'Гуйвуулгын  дэлгэрэнгүй',
+          'Төлбөр баталгаажуулах',
           style: TextStyle(
             color: dark,
             fontSize: 18,
@@ -131,12 +145,13 @@ class _RemittancePageState extends State<RemittancePage> {
                       ),
                       child: AnimatedTextField(
                         readOnly: true,
-                        labelText: 'Иен  / лимит: 5,000,000 /',
+                        labelText: 'Илгээх дүн',
                         name: 'mnt',
                         focusNode: mnt,
                         borderColor: blue,
                         colortext: dark,
-                        initialValue: '¥ ${tools.mnt}',
+                        initialValue:
+                            '¥ ${Utils().formatTextCustom(tools.mnt)}',
                         prefixIcon: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -180,7 +195,7 @@ class _RemittancePageState extends State<RemittancePage> {
                         bottom: 16,
                       ),
                       child: AnimatedTextField(
-                        labelText: 'Төгрөг  / лимит: 25,000,000 /',
+                        labelText: 'Дүн',
                         name: 'yen',
                         focusNode: yen,
                         borderColor: blue,
@@ -221,145 +236,198 @@ class _RemittancePageState extends State<RemittancePage> {
                 width: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: borderColor),
+                  border: Border.all(width: 1, color: borderColor),
                 ),
                 child: Padding(
                   padding: EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${tools.receiver}',
-                        style: TextStyle(
-                          color: dark,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(
-                        height: 8,
-                      ),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Дансны дугаар: ',
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Bank name:',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            TextSpan(
-                              text: '${tools.bankCardNo}',
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.BankName}',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       SizedBox(
                         height: 8,
                       ),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Хот: ',
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Account number:',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            TextSpan(
-                              text: '${tools.cityName}',
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.AccountNumber}',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       SizedBox(
                         height: 8,
                       ),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Үнэмлэхний дугаар: ',
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Swift code:',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            TextSpan(
-                              text: '${tools.idCardNo}',
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.SwiftCode}',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       SizedBox(
                         height: 8,
                       ),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Утасны дугаар: ',
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Branch name:',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            TextSpan(
-                              text: '${tools.phone}',
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.BranchName}',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       SizedBox(
                         height: 8,
                       ),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Төлбөрийн зориулалт: ',
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Branch address:',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            TextSpan(
-                              text: '${tools.purpose}',
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.BranchAddress}',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 8,
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Account name:',
+                              style: TextStyle(
+                                color: dark,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.AccountName}',
+                              style: TextStyle(
+                                color: dark,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 8,
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Төлбөрийн зориулалт:',
+                              style: TextStyle(
+                                color: dark,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.tradePurpose}',
+                              style: TextStyle(
+                                color: dark,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -369,33 +437,33 @@ class _RemittancePageState extends State<RemittancePage> {
                 height: 16,
               ),
               Text(
-                '1 MNT = ${tools.toValue} JPY',
+                '1 JPY = ${tools.toValue} MNT',
                 style: TextStyle(
                   color: dark,
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               SizedBox(
                 height: 8,
               ),
               Text(
-                'Нийт төлөх дүн: ₮ ${tools.totalAmount}',
+                'Шимтгэл: ₮ ${Utils().formatTextCustom(tools.fee)}',
                 style: TextStyle(
                   color: dark,
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               SizedBox(
                 height: 8,
               ),
               Text(
-                'Шимтгэл: ₮ ${tools.fee}',
+                'Гуйвуулах дүн: ¥ ${Utils().formatTextCustom(tools.mnt)}',
                 style: TextStyle(
                   color: dark,
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               SizedBox(
@@ -413,7 +481,7 @@ class _RemittancePageState extends State<RemittancePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Хүлээн авах дүн:',
+                        'Нийт төлөх дүн:',
                         style: TextStyle(
                           color: blue.withOpacity(0.75),
                           fontSize: 12,
@@ -424,7 +492,7 @@ class _RemittancePageState extends State<RemittancePage> {
                         height: 4,
                       ),
                       Text(
-                        '₮ ${tools.toAmount}',
+                        '₮ ${Utils().formatCurrencyCustom(tools.totalAmount)}',
                         style: TextStyle(
                           color: blue,
                           fontSize: 24,
@@ -503,10 +571,10 @@ class _RemittancePageState extends State<RemittancePage> {
               ),
               CustomButton(
                 onClick: () {
-                  onSubmit(tools);
+                  onSubmit(tools, general);
                 },
                 buttonColor: blue,
-                isLoading: false,
+                isLoading: isLoading,
                 labelText: 'Гуйвуулга хийх',
                 textColor: white,
               ),

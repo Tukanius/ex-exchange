@@ -1,5 +1,8 @@
+import 'package:wx_exchange_flutter/models/general_%20models/amount_range.dart';
 import 'package:wx_exchange_flutter/models/general_%20models/bank_name.dart';
 import 'package:wx_exchange_flutter/models/general_%20models/currency_type.dart';
+import 'package:wx_exchange_flutter/models/general_%20models/jpy_currency.dart';
+import 'package:wx_exchange_flutter/models/general_%20models/minMax.dart';
 import 'package:wx_exchange_flutter/models/general_%20models/national.dart';
 import 'package:wx_exchange_flutter/models/general_%20models/object_status.dart';
 import 'package:wx_exchange_flutter/models/general_%20models/payment_method.dart';
@@ -12,7 +15,7 @@ import 'package:wx_exchange_flutter/models/general_%20models/user_type.dart';
 part '../parts/general.dart';
 
 class General {
-  List<BankName>? bankName;
+  List<BankNames>? bankNames;
   List<UserType>? userType;
   List<CurrencyType>? currencyType;
   List<ObjectStatus>? objectStatus;
@@ -22,9 +25,13 @@ class General {
   List<TradeTypes>? tradeTypes;
   List<TransactionStatus>? transactionStatus;
   List<National>? national;
+  List<AmountRange>? amountRange;
+  bool? userNotfication;
+  JpyCurrency? jpyCurrency;
+  MinMax? minMax;
 
   General({
-    this.bankName,
+    this.bankNames,
     this.userType,
     this.currencyType,
     this.objectStatus,
@@ -34,6 +41,10 @@ class General {
     this.tradeTypes,
     this.transactionStatus,
     this.national,
+    this.amountRange,
+    this.userNotfication,
+    this.jpyCurrency,
+    this.minMax,
   });
   static $fromJson(Map<String, dynamic> json) => _$GeneralFromJson(json);
 

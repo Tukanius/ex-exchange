@@ -102,7 +102,7 @@ class _PasswordSettingsPageState extends State<PasswordSettingsPage> {
               labelText: 'Хуучин нууц үг',
               name: 'password',
               focusNode: password,
-              borderColor: borderBlackColor,
+              borderColor: blue,
               colortext: dark,
               controller: passwordController,
               suffixIcon: password.hasFocus == true
@@ -146,7 +146,7 @@ class _PasswordSettingsPageState extends State<PasswordSettingsPage> {
               labelText: 'Шинэ нууц үг',
               name: 'passwordNew',
               focusNode: passwordNew,
-              borderColor: borderBlackColor,
+              borderColor: blue,
               colortext: dark,
               controller: passwordNewController,
               suffixIcon: passwordNew.hasFocus == true
@@ -190,7 +190,7 @@ class _PasswordSettingsPageState extends State<PasswordSettingsPage> {
               labelText: 'Нууц үг баталгаажуулах',
               name: 'passwordRepeat',
               focusNode: passwordRepeat,
-              borderColor: borderBlackColor,
+              borderColor: blue,
               colortext: dark,
               controller: passwordRepeatController,
               suffixIcon: passwordRepeat.hasFocus == true

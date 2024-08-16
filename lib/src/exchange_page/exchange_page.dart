@@ -5,7 +5,9 @@ import 'dart:async';
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -22,7 +24,7 @@ import 'package:wx_exchange_flutter/models/result.dart';
 import 'package:wx_exchange_flutter/models/user.dart';
 import 'package:wx_exchange_flutter/provider/exchange_provider.dart';
 import 'package:wx_exchange_flutter/provider/general_provider.dart';
-import 'package:wx_exchange_flutter/src/exchange_page/signature/signature_check_page.dart';
+import 'package:wx_exchange_flutter/src/exchange_page/signature/signature_page.dart';
 import 'package:wx_exchange_flutter/src/history_page/exchange.dart';
 import 'package:wx_exchange_flutter/utils/utils.dart';
 import 'package:wx_exchange_flutter/widget/ui/animated_text_field/animated_textfield.dart';
@@ -36,6 +38,8 @@ class ExchangePage extends StatefulWidget {
 }
 
 class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
+  GlobalKey<FormBuilderState> fbkey = GlobalKey<FormBuilderState>();
+
   FocusNode mnt = FocusNode();
   FocusNode yen = FocusNode();
   bool confirmterm = false;
@@ -123,45 +127,51 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
   }
 
   onChange(String query) async {
-    setState(() {
-      isValueError = query.length < 3;
-      print(isValueError);
-    });
-    Exchange data = Exchange();
-    if (timer != null) timer!.cancel();
-    setState(() {
-      tradeSubmit = true;
-    });
-    timer = Timer(const Duration(milliseconds: 1000), () async {
-      if (!mounted) return;
-      try {
-        data.type = "EXCHANGE";
-        data.fromCurrency = "MNT";
-        data.toCurrency = "JPY";
-        data.fromAmount = num.parse(query);
-        num.parse(query) >= 100
-            ? dataReceive = await ExchangeApi().tradeConvertor(data)
-            : SizedBox();
+    if (query != '') {
+      print('======QUERY======');
+      print(query);
+      print('======QUERY======');
+
+      setState(() {
+        isValueError = num.parse(query) < 33000;
+        print(isValueError);
+      });
+      Exchange data = Exchange();
+      if (timer != null) timer!.cancel();
+      setState(() {
+        tradeSubmit = true;
+      });
+      timer = Timer(const Duration(milliseconds: 500), () async {
         if (!mounted) return;
-        setState(() {
-          jpnController.text = dataReceive.toAmount?.toString() ?? '0';
-        });
-        setState(() {
-          tradeSubmit = false;
-        });
-      } catch (e) {
-        // end bur yg utga ni solih bolomjgui bol ym gargaj irh ystoi bha ahhah
-        print(e.toString());
-        if (mounted) {
+        try {
+          data.type = "EXCHANGE";
+          data.fromCurrency = "MNT";
+          data.toCurrency = "JPY";
+          data.fromAmount = num.parse(query);
+          num.parse(query) >= 33000
+              ? dataReceive = await ExchangeApi().tradeConvertor(data)
+              : SizedBox();
+          if (!mounted) return;
           setState(() {
-            jpnController.text = '0';
+            jpnController.text = dataReceive.toAmount?.toString() ?? '0';
           });
           setState(() {
             tradeSubmit = false;
           });
+        } catch (e) {
+          // end bur yg utga ni solih bolomjgui bol ym gargaj irh ystoi bha ahhah
+          print(e.toString());
+          if (mounted) {
+            setState(() {
+              jpnController.text = '0';
+            });
+            setState(() {
+              tradeSubmit = false;
+            });
+          }
         }
-      }
-    });
+      });
+    }
   }
 
 // on FormatException {
@@ -189,9 +199,11 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
     if (user.userStatus == "NEW") {
       danVerify(context);
     } else {
+      print(num.parse(mntController.text));
       if (isValueError == false) {
         setState(() {
-          mntController.text.length >= 3
+          mntController.text.length > 4 &&
+                  num.parse(mntController.text) >= 33000
               ? isValueError = false
               : isValueError = true;
           print(isValueError);
@@ -306,10 +318,10 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                   top: 16,
                                 ),
                                 child: AnimatedTextField(
+                                  floatLabel: FloatingLabelBehavior.always,
                                   onChanged: (query) {
                                     onChange(query);
                                   },
-                                  floatLabel: FloatingLabelBehavior.always,
                                   labelText: 'Төгрөг  / лимит: 25,000,000 /',
                                   name: 'mnt',
                                   focusNode: mnt,
@@ -345,7 +357,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                         top: 4,
                                       ),
                                       child: Text(
-                                        'Арилжих хамгийн бага утга 100.',
+                                        'Арилжих хамгийн бага утга ₮ 33.000.00.',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
@@ -806,7 +818,69 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                         //     color: blue,
                         //     onLoading: onLoading,
                         //     onRefresh: onRefresh,
-                        //     child:
+                        //     child: isLoadingHistory
+                        //         ? Center(
+                        //             child: CircularProgressIndicator(
+                        //               color: blue,
+                        //             ),
+                        //           )
+                        //         : resultHistory.rows!.isNotEmpty
+                        //             ? ListView.builder(
+                        //                 itemCount: resultHistory.rows!.length,
+                        //                 itemBuilder: (context, index) {
+                        //                   final data =
+                        //                       resultHistory.rows![index];
+                        //                   return GestureDetector(
+                        //                     onTap: () {
+                        //                        Navigator.of(context).pushNamed(
+                        //                           OrderDetailPage.routeName,
+                        //                           arguments:
+                        //                               OrderDetailPageArguments(
+                        //                                   data: data),
+                        //                         );
+                        //                       // if (data.type == "TRANSFER") {
+                        //                       //   Navigator.of(context).pushNamed(
+                        //                       //     TransferDetailPage.routeName,
+                        //                       //     arguments:
+                        //                       //         TransferDetailPageArguments(
+                        //                       //             data: data),
+                        //                       //   );
+                        //                       // } else {
+
+                        //                       // }
+                        //                     },
+                        //                     child:
+                        //                         TradeHistoryButton(data: data),
+                        //                   );
+                        //                 },
+                        //               )
+                        //             : Center(
+                        //                 child: Column(
+                        //                   children: [
+                        //                     SizedBox(
+                        //                       height: 80,
+                        //                     ),
+                        //                     SvgPicture.asset(
+                        //                       'assets/svg/notfound.svg',
+                        //                       color: dark,
+                        //                     ),
+                        //                     SizedBox(
+                        //                       height: 15,
+                        //                     ),
+                        //                     Text(
+                        //                       'Түүх олдсонгүй.',
+                        //                       style: TextStyle(
+                        //                         color: dark,
+                        //                         fontSize: 14,
+                        //                         fontWeight: FontWeight.w600,
+                        //                       ),
+                        //                     ),
+                        //                     SizedBox(
+                        //                       height: 80,
+                        //                     ),
+                        //                   ],
+                        //                 ),
+                        //               ),
                         //   ),
                         // ),
                         SizedBox(
@@ -827,11 +901,9 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
 
   addReceiver(BuildContext context, General general) {
     FocusNode receiverNameFocusNode = FocusNode();
-    FocusNode receiverBank = FocusNode();
-    FocusNode bankId = FocusNode();
-    FocusNode receiverPhone = FocusNode();
+    FocusNode bankIdFocus = FocusNode();
+    FocusNode receiverPhoneFocus = FocusNode();
     TextEditingController receiverNameController = TextEditingController();
-    TextEditingController receiverBankController = TextEditingController();
     TextEditingController bankIdController = TextEditingController();
     TextEditingController receiverPhoneController = TextEditingController();
     int selectedContainerIndex = -1;
@@ -905,219 +977,261 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
         ),
       ),
       backgroundColor: white,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            receiverBank.addListener(() {
-              if (receiverBank.hasFocus) {
-                setState(() {});
-              } else {
-                setState(() {});
-              }
-            });
-            receiverNameFocusNode.addListener(() {
-              if (receiverNameFocusNode.hasFocus) {
-                setState(() {});
-              } else {
-                setState(() {});
-              }
-            });
-            bankId.addListener(() {
-              if (bankId.hasFocus) {
-                setState(() {});
-              } else {
-                setState(() {});
-              }
-            });
-            receiverPhone.addListener(() {
-              if (receiverPhone.hasFocus) {
-                setState(() {});
-              } else {
-                setState(() {});
-              }
-            });
-            return Container(
-              width: MediaQuery.of(context).size.width,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: Container(
-                              width: 38,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: borderColor,
+      builder: (BuildContext context) => StatefulBuilder(
+        builder: (context, setState) {
+          receiverNameFocusNode.addListener(() {
+            if (receiverNameFocusNode.hasFocus) {
+              setState(() {});
+            } else {
+              setState(() {});
+            }
+          });
+          bankIdFocus.addListener(() {
+            if (bankIdFocus.hasFocus) {
+              setState(() {});
+            } else {
+              setState(() {});
+            }
+          });
+          receiverPhoneFocus.addListener(() {
+            if (receiverPhoneFocus.hasFocus) {
+              setState(() {});
+            } else {
+              setState(() {});
+            }
+          });
+
+          return Container(
+            width: MediaQuery.of(context).size.width,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Container(
+                            width: 38,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: borderColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 28),
+                    result.rows!.isNotEmpty
+                        ? Container(
+                            margin: EdgeInsets.only(bottom: 24),
+                            height: 62,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: result.rows!.asMap().entries.map(
+                                  (entry) {
+                                    final index = entry.key;
+                                    final data = entry.value;
+                                    return GestureDetector(
+                                      key: ValueKey(index),
+                                      onTap: () {
+                                        setState(() {
+                                          selectedContainerIndex = index;
+                                        });
+                                        receiverNameController.text = data.name;
+                                        bankIdController.text = data.bankCardNo;
+                                        receiverPhoneController.text =
+                                            data.phone;
+                                        setState(() {
+                                          dropBankName = data.bankName;
+                                        });
+
+                                        print(dropBankName);
+                                      },
+                                      child: buildContainer(data, index),
+                                    );
+                                  },
+                                ).toList(),
                               ),
                             ),
+                          )
+                        : SizedBox(),
+                    FormBuilder(
+                      key: fbkey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AnimatedTextField(
+                            inputType: TextInputType.text,
+                            controller: receiverNameController,
+                            labelText: 'Хүлээн авагчийн овог, нэр',
+                            name: 'receiver',
+                            focusNode: receiverNameFocusNode,
+                            borderColor: blue,
+                            colortext: dark,
+                            suffixIcon: receiverNameFocusNode.hasFocus == true
+                                ? GestureDetector(
+                                    onTap: () {
+                                      receiverNameController.clear();
+                                    },
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      color: black,
+                                    ),
+                                  )
+                                : null,
+                            validator: FormBuilderValidators.compose([
+                              (value) {
+                                return validateName(value.toString());
+                              }
+                            ]),
+                          ),
+                          SizedBox(height: 16),
+                          DropdownButtonFormField(
+                            value: dropBankName,
+                            icon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: black,
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                dropBankName = value;
+                              });
+                            },
+                            dropdownColor: white,
+                            elevation: 1,
+                            focusColor: white,
+                            decoration: InputDecoration(
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: cancel),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: cancel),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: borderColor),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: blue),
+                              ),
+                              disabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: blue),
+                              ),
+                              labelText: 'Хүлээн авагчийн банк',
+                              labelStyle: TextStyle(
+                                color: hintText,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              isDense: true,
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                            items: general.bankNames!
+                                .map(
+                                  (data) => DropdownMenuItem(
+                                    value: data.code,
+                                    child: Text(
+                                      '${data.code}',
+                                      style: TextStyle(
+                                        color: dark,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Банк сонгоно уу';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 16),
+                          AnimatedTextField(
+                            controller: bankIdController,
+                            labelText: 'Дансны дугаар',
+                            name: 'cityName',
+                            focusNode: bankIdFocus,
+                            borderColor: blue,
+                            colortext: dark,
+                            inputType: TextInputType.number,
+                            inputFormatters: <TextInputFormatter>[
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[0-9]')),
+                            ],
+                            suffixIcon: bankIdFocus.hasFocus == true
+                                ? GestureDetector(
+                                    onTap: () {
+                                      bankIdController.clear();
+                                    },
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      color: black,
+                                    ),
+                                  )
+                                : null,
+                            validator: FormBuilderValidators.compose([
+                              (value) {
+                                return validateDans(value.toString());
+                              }
+                            ]),
+                          ),
+                          SizedBox(height: 16),
+                          AnimatedTextField(
+                            controller: receiverPhoneController,
+                            labelText: 'Харилцах утас',
+                            name: 'idNumber',
+                            focusNode: receiverPhoneFocus,
+                            borderColor: blue,
+                            colortext: dark,
+                            inputType: TextInputType.number,
+                            inputFormatters: <TextInputFormatter>[
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[0-9]')),
+                            ],
+                            suffixIcon: receiverPhoneFocus.hasFocus == true
+                                ? GestureDetector(
+                                    onTap: () {
+                                      receiverPhoneController.clear();
+                                    },
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      color: black,
+                                    ),
+                                  )
+                                : null,
+                            validator: FormBuilderValidators.compose([
+                              (value) {
+                                return validatePhone(value.toString());
+                              }
+                            ]),
                           ),
                         ],
                       ),
-                      SizedBox(height: 28),
-                      result.rows!.isNotEmpty
-                          ? Container(
-                              margin: EdgeInsets.only(bottom: 24),
-                              height: 62,
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: result.rows!.asMap().entries.map(
-                                    (entry) {
-                                      final index = entry.key;
-                                      final data = entry.value;
-                                      return GestureDetector(
-                                        key: ValueKey(index),
-                                        onTap: () {
-                                          setState(() {
-                                            selectedContainerIndex = index;
-                                          });
-                                          receiverNameController.text =
-                                              data.name;
-                                          receiverBankController.text =
-                                              data.bankName;
-                                          bankIdController.text =
-                                              data.bankCardNo;
-                                          receiverPhoneController.text =
-                                              data.phone;
-                                          setState(() {
-                                            dropBankName = data.bankName;
-                                          });
-
-                                          print(dropBankName);
-                                        },
-                                        child: buildContainer(data, index),
-                                      );
-                                    },
-                                  ).toList(),
-                                ),
-                              ),
-                            )
-                          : SizedBox(),
-                      AnimatedTextField(
-                        controller: receiverNameController,
-                        labelText: 'Хүлээн авагчийн овог, нэр',
-                        name: 'receiver',
-                        focusNode: receiverBank,
-                        borderColor: dark,
-                        colortext: dark,
-                        suffixIcon: receiverBank.hasFocus == true
-                            ? GestureDetector(
-                                onTap: () {
-                                  receiverNameController.clear();
-                                },
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: black,
-                                ),
-                              )
-                            : null,
-                      ),
-                      SizedBox(height: 16),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: borderColor),
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(12),
-                          ),
-                        ),
-                        child: DropdownButtonFormField(
-                          value: dropBankName,
-                          icon: const Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: black,
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              dropBankName = value;
-                            });
-                          },
-                          dropdownColor: white,
-                          elevation: 1,
-                          focusColor: white,
-                          decoration: InputDecoration(
-                            labelText: 'Хүлээн авагчийн банк',
-                            labelStyle: TextStyle(
-                              color: hintText,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
-                            isDense: true,
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 6.5,
-                            ),
-                          ),
-                          items: general.bankName!
-                              .map(
-                                (data) => DropdownMenuItem(
-                                  value: data.code,
-                                  child: Text(
-                                    '${data.code}',
-                                    style: TextStyle(
-                                      color: dark,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      AnimatedTextField(
-                        controller: bankIdController,
-                        labelText: 'Дансны дугаар',
-                        name: 'cityName',
-                        focusNode: bankId,
-                        borderColor: dark,
-                        colortext: dark,
-                        suffixIcon: bankId.hasFocus == true
-                            ? GestureDetector(
-                                onTap: () {
-                                  bankIdController.clear();
-                                },
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: black,
-                                ),
-                              )
-                            : null,
-                      ),
-                      SizedBox(height: 16),
-                      AnimatedTextField(
-                        controller: receiverPhoneController,
-                        labelText: 'Харилцах утас',
-                        name: 'idNumber',
-                        focusNode: receiverPhone,
-                        borderColor: dark,
-                        colortext: dark,
-                        suffixIcon: receiverPhone.hasFocus == true
-                            ? GestureDetector(
-                                onTap: () {
-                                  receiverPhoneController.clear();
-                                },
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: black,
-                                ),
-                              )
-                            : null,
-                      ),
-                      SizedBox(height: 24),
-                      CustomButton(
-                        onClick: () {
+                    ),
+                    SizedBox(height: 24),
+                    CustomButton(
+                      onClick: () {
+                        if (fbkey.currentState!.saveAndValidate()) {
                           if (receiverNameController.text != "" &&
                               dropBankName != null &&
                               bankIdController.text != "" &&
@@ -1126,32 +1240,31 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                               isSetUser = true;
                             });
                             updateReceiverBox(receiverNameController.text);
-                            info.name = receiverNameController.text;
+                            // info.name = receiverNameController.text;
                             info.bankName = dropBankName;
-                            info.bankCardNo = bankIdController.text;
+                            // info.bankCardNo = bankIdController.text;
                             info.phone = receiverPhoneController.text;
                             setState(() {
                               dropBankName = null;
                             });
+                            FocusScope.of(context).unfocus();
                             Navigator.of(context).pop();
-                          } else {
-                            showErrorReceiver();
                           }
-                        },
-                        buttonColor: blue,
-                        isLoading: false,
-                        labelText: 'Болсон',
-                        textColor: white,
-                      ),
-                      SizedBox(height: 100),
-                    ],
-                  ),
+                        }
+                      },
+                      buttonColor: blue,
+                      isLoading: false,
+                      labelText: 'Болсон',
+                      textColor: white,
+                    ),
+                    SizedBox(height: 100),
+                  ],
                 ),
               ),
-            );
-          },
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -1293,6 +1406,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                   setState(() {
                                     purposeTrade = true;
                                   });
+                                  FocusScope.of(context).unfocus();
                                   Navigator.of(context).pop();
                                 },
                                 child: Column(
@@ -1364,6 +1478,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                     children: [
                       GestureDetector(
                         onTap: () {
+                          FocusScope.of(context).unfocus();
                           Navigator.of(context).pop();
                         },
                         child: SvgPicture.asset('assets/svg/close.svg'),
@@ -1392,7 +1507,8 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${data.name}',
+                            // '${data.name}',
+                            '123',
                             style: TextStyle(
                               color: dark,
                               fontSize: 16,
@@ -1414,7 +1530,8 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                   ),
                                 ),
                                 TextSpan(
-                                  text: '${data.bankCardNo}',
+                                  // text: '${data.bankCardNo}',
+                                  text: '123',
                                   style: TextStyle(
                                     color: dark,
                                     fontSize: 16,
@@ -1532,18 +1649,18 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                       });
                       setState(
                         () {
-                          tools.toUpdateUser(
-                            newbank: data.bankName!,
-                            newbankid: data.bankCardNo!,
-                            newphone: data.phone!,
-                            newreceiver: data.name!,
-                          );
+                          // tools.toUpdateUser(
+                          // newbank: data.bankName!,
+                          // newbankid: data.bankCardNo!,
+                          // newphone: data.phone!,
+                          // newreceiver: data.name!,
+                          // );
                           tools.updateAll(
-                            newmnt: mntController.text,
+                            newmnt: 123,
                             newcurrency: jpnController.text,
                             newtoValue: dataReceive.toValue.toString(),
-                            newtotalAmount: dataReceive.totalAmount.toString(),
-                            newfee: dataReceive.fee.toString(),
+                            newtotalAmount: dataReceive.totalAmount!,
+                            newfee: dataReceive.fee!,
                             newtoAmount: dataReceive.toAmount.toString(),
                           );
                         },
@@ -1551,7 +1668,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                       setState(() {
                         confirmAll = false;
                       });
-
+                      FocusScope.of(context).unfocus();
                       Navigator.of(context).pop();
                       setState(() {
                         user.contract == false
@@ -1902,4 +2019,50 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
       ),
     );
   }
+}
+
+String? isValidCryllic(String name, BuildContext context) {
+  String pattern = r'(^[а-яА-ЯӨөҮүЁёӨө -]+$)';
+  RegExp isValidName = RegExp(pattern);
+  if (name.isEmpty) {
+    return "Заавар оруулна";
+  } else {
+    if (!isValidName.hasMatch(name)) {
+      return "Зөвхөн крилл үсэг ашиглана";
+    } else {
+      return null;
+    }
+  }
+}
+
+String? validatePhone(String value) {
+  RegExp regex = RegExp(r'^[689][0-9]{7}$');
+  if (value.isEmpty) {
+    return 'Утасны дугаараа оруулна уу';
+  } else {
+    if (!regex.hasMatch(value)) {
+      return 'Утасны дугаараа шалгана уу';
+    } else {
+      return null;
+    }
+  }
+}
+
+String? validateName(String value) {
+  if (value.isEmpty) {
+    return "Талбарыг заавал бөглөнө үү";
+  }
+  return null;
+}
+
+String? validateDans(String value) {
+  String pattern = r'^[0-9]{8,12}$';
+  RegExp regex = RegExp(pattern);
+
+  if (value.isEmpty) {
+    return "Талбарыг заавал бөглөнө үү";
+  } else if (!regex.hasMatch(value)) {
+    return "Утга нь 8-12 тоо байх ёстой";
+  }
+  return null; // Valid input
 }

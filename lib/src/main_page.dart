@@ -1,18 +1,31 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:wx_exchange_flutter/src/exchange_page/exchange_page.dart';
+import 'package:provider/provider.dart';
+import 'package:wx_exchange_flutter/models/general.dart';
+import 'package:wx_exchange_flutter/provider/general_provider.dart';
 import 'package:wx_exchange_flutter/src/history_page/history_page.dart';
+import 'package:wx_exchange_flutter/src/notification_page/notification_page.dart';
 import 'package:wx_exchange_flutter/src/transfer_page/trans.dart';
 // import 'package:wx_exchange_flutter/src/transfer_page/transfer_page.dart';
 import 'package:wx_exchange_flutter/src/profile_page/profile_page.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
+class MainPageArguments {
+  int initialIndex;
+  MainPageArguments({
+    required this.initialIndex,
+  });
+}
+
 class MainPage extends StatefulWidget {
   static const routeName = "MainPage";
-  const MainPage({super.key});
+  final int initialIndex;
+  const MainPage({super.key, required this.initialIndex});
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -22,8 +35,9 @@ class _MainPageState extends State<MainPage> {
   int selectedIndex = 0;
   bool isLoading = true;
   final ScrollController _scrollController = ScrollController();
+  General general = General();
   static const List<Widget> currentPages = [
-    ExchangePage(),
+    // ExchangePage(),
     // MoneyOrder(),
     TransferPage(),
     HistoryPage(),
@@ -31,11 +45,17 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
+    initialize();
+    selectedIndex = widget.initialIndex;
     KeyboardVisibilityController().onChange.listen((bool visible) {
       setState(() {
         _isKeyboardVisible = visible;
       });
     });
+  }
+
+  Future<void> initialize() async {
+    await Provider.of<GeneralProvider>(context, listen: false).init(true);
   }
 
   void ontappedItem(int index) {
@@ -55,6 +75,7 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    general = Provider.of<GeneralProvider>(context, listen: true).general;
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -86,10 +107,7 @@ class _MainPageState extends State<MainPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              child:
-                                  SvgPicture.asset('assets/svg/wx_white.svg'),
-                            ),
+                            SvgPicture.asset('assets/svg/wx_white.svg'),
                             SizedBox(
                               height: 4,
                             ),
@@ -106,7 +124,27 @@ class _MainPageState extends State<MainPage> {
                       ],
                     ),
                     actions: [
-                      SvgPicture.asset('assets/svg/notify.svg'),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context)
+                              .pushNamed(NotificationPage.routeName);
+                        },
+                        child: Stack(
+                          children: [
+                            Center(
+                              child: SvgPicture.asset('assets/svg/notify.svg'),
+                            ),
+                            general.userNotfication == true
+                                ? Positioned(
+                                    top: 10,
+                                    right: 0,
+                                    child: SvgPicture.asset(
+                                        'assets/svg/red_dot.svg'),
+                                  )
+                                : SizedBox(),
+                          ],
+                        ),
+                      ),
                       SizedBox(
                         width: 12,
                       ),
@@ -147,12 +185,12 @@ class _MainPageState extends State<MainPage> {
                                   SizedBox(
                                     width: 16,
                                   ),
-                                  SvgPicture.asset('assets/svg/mn.svg'),
+                                  SvgPicture.asset('assets/svg/jp.svg'),
                                   SizedBox(
                                     width: 12,
                                   ),
                                   Text(
-                                    'Төгрөг',
+                                    'Иен',
                                     style: TextStyle(
                                       color: white,
                                       fontWeight: FontWeight.w500,
@@ -166,12 +204,12 @@ class _MainPageState extends State<MainPage> {
                               ),
                               Row(
                                 children: [
-                                  SvgPicture.asset('assets/svg/jp.svg'),
+                                  SvgPicture.asset('assets/svg/mn.svg'),
                                   SizedBox(
                                     width: 12,
                                   ),
                                   Text(
-                                    'Иен',
+                                    'Төгрөг',
                                     style: TextStyle(
                                       color: white,
                                       fontWeight: FontWeight.w500,
@@ -209,6 +247,23 @@ class _MainPageState extends State<MainPage> {
                     onTap: ontappedItem,
                     currentIndex: selectedIndex,
                     items: [
+                      // BottomNavigationBarItem(
+                      //   icon: Container(
+                      //     padding:
+                      //         EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      //     decoration: BoxDecoration(
+                      //       borderRadius: BorderRadius.circular(8),
+                      //       color: selectedIndex == 0
+                      //           ? blue.withOpacity(0.1)
+                      //           : null,
+                      //     ),
+                      //     child: SvgPicture.asset(
+                      //       'assets/svg/transfer.svg',
+                      //       color: selectedIndex == 0 ? blue : null,
+                      //     ),
+                      //   ),
+                      //   label: '',
+                      // ),
                       BottomNavigationBarItem(
                         icon: Container(
                           padding:
@@ -220,7 +275,7 @@ class _MainPageState extends State<MainPage> {
                                 : null,
                           ),
                           child: SvgPicture.asset(
-                            'assets/svg/transfer.svg',
+                            'assets/svg/export.svg',
                             color: selectedIndex == 0 ? blue : null,
                           ),
                         ),
@@ -237,25 +292,8 @@ class _MainPageState extends State<MainPage> {
                                 : null,
                           ),
                           child: SvgPicture.asset(
-                            'assets/svg/export.svg',
-                            color: selectedIndex == 1 ? blue : null,
-                          ),
-                        ),
-                        label: '',
-                      ),
-                      BottomNavigationBarItem(
-                        icon: Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: selectedIndex == 2
-                                ? blue.withOpacity(0.1)
-                                : null,
-                          ),
-                          child: SvgPicture.asset(
                             'assets/svg/history.svg',
-                            color: selectedIndex == 2 ? blue : null,
+                            color: selectedIndex == 1 ? blue : null,
                           ),
                         ),
                         label: '',

@@ -2,8 +2,8 @@ part of '../models/general.dart';
 
 General _$GeneralFromJson(Map<String, dynamic> json) {
   return General(
-    bankName: json['bankName'] != null
-        ? (json['bankName'] as List).map((e) => BankName.fromJson(e)).toList()
+    bankNames: json['bankNames'] != null
+        ? (json['bankNames'] as List).map((e) => BankNames.fromJson(e)).toList()
         : null,
     userType: json['userType'] != null
         ? (json['userType'] as List).map((e) => UserType.fromJson(e)).toList()
@@ -46,13 +46,25 @@ General _$GeneralFromJson(Map<String, dynamic> json) {
     national: json['national'] != null
         ? (json['national'] as List).map((e) => National.fromJson(e)).toList()
         : null,
+    amountRange: json['amountRange'] != null
+        ? (json['amountRange'] as List)
+            .map((e) => AmountRange.fromJson(e))
+            .toList()
+        : null,
+    userNotfication: json['userNotfication'] != null
+        ? json['userNotfication'] as bool
+        : null,
+    jpyCurrency: json['jpyCurrency'] != null
+        ? new JpyCurrency.fromJson(json['jpyCurrency'])
+        : null,
+    minMax: json['minMax'] != null ? new MinMax.fromJson(json['minMax']) : null,
   );
 }
 
 Map<String, dynamic> _$GeneralToJson(General instance) {
   Map<String, dynamic> json = {};
 
-  if (instance.bankName != null) json['bankName'] = instance.bankName;
+  if (instance.bankNames != null) json['bankNames'] = instance.bankNames;
   if (instance.userType != null) json['userType'] = instance.userType;
   if (instance.currencyType != null)
     json['currencyType'] = instance.currencyType;
@@ -68,6 +80,11 @@ Map<String, dynamic> _$GeneralToJson(General instance) {
   if (instance.transactionStatus != null)
     json['transactionStatus'] = instance.transactionStatus;
   if (instance.national != null) json['national'] = instance.national;
+  if (instance.amountRange != null) json['amountRange'] = instance.amountRange;
+  if (instance.userNotfication != null)
+    json['userNotfication'] = instance.userNotfication;
+  if (instance.jpyCurrency != null) json['jpyCurrency'] = instance.jpyCurrency;
+  if (instance.minMax != null) json['minMax'] = instance.minMax;
 
   return json;
 }

@@ -1,11 +1,16 @@
+// import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
+import 'package:wx_exchange_flutter/firebase_options.dart';
 import 'package:wx_exchange_flutter/provider/exchange_provider.dart';
 import 'package:wx_exchange_flutter/provider/general_provider.dart';
 import 'package:wx_exchange_flutter/provider/user_provider.dart';
 import 'package:wx_exchange_flutter/services/dialog.dart';
+import 'package:wx_exchange_flutter/services/navigation.dart';
+import 'package:wx_exchange_flutter/services/notify_service.dart';
 import 'package:wx_exchange_flutter/src/auth/check-biometric.dart';
 import 'package:wx_exchange_flutter/src/auth/foget_password_page.dart';
 import 'package:wx_exchange_flutter/src/auth/login_page.dart';
@@ -14,10 +19,12 @@ import 'package:wx_exchange_flutter/src/auth/password_page.dart';
 import 'package:wx_exchange_flutter/src/auth/register_page.dart';
 import 'package:wx_exchange_flutter/src/exchange_page/exchange_order/order_info_page.dart';
 import 'package:wx_exchange_flutter/src/exchange_page/exchange_order/payment_info_page.dart';
-import 'package:wx_exchange_flutter/src/exchange_page/signature/signature_check_page.dart';
+import 'package:wx_exchange_flutter/src/exchange_page/signature/signature_page.dart';
 import 'package:wx_exchange_flutter/src/history_page/exchange.dart';
 import 'package:wx_exchange_flutter/src/history_page/transfer_detail.dart';
 import 'package:wx_exchange_flutter/src/main_page.dart';
+import 'package:wx_exchange_flutter/src/notification_page/notification_page.dart';
+import 'package:wx_exchange_flutter/src/profile_page/settings/receiver_settings.dart';
 import 'package:wx_exchange_flutter/src/transfer_page/remittance/remittance.dart';
 import 'package:wx_exchange_flutter/src/profile_page/profile_page.dart';
 import 'package:wx_exchange_flutter/src/profile_page/settings/address_settings.dart';
@@ -29,8 +36,11 @@ import 'package:wx_exchange_flutter/widget/dialog/dialog_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotifyService().initNotify();
   locator.registerLazySingleton(() => DialogService());
+  locator.registerLazySingleton(() => NavigationService());
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -43,6 +53,10 @@ GetIt locator = GetIt.instance;
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
+  static int invalidTokenCount = 0;
+  static setInvalidToken(int count) {
+    invalidTokenCount = count;
+  }
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -66,10 +80,15 @@ class _MyAppState extends State<MyApp> {
                     DialogManager(child: loading(context, widget)),
               ),
             ),
-            title: 'Green Score',
+            title: 'WX Exchange',
             theme: ThemeData(useMaterial3: false),
             debugShowCheckedModeBanner: false,
             initialRoute: SplashScreen.routeName,
+            navigatorKey: locator<NavigationService>().navigatorKey,
+            routes: {
+              'NotificationPage': (context) => const NotificationPage(),
+              'SplashScreen': (context) => const SplashScreen(),
+            },
             onGenerateRoute: (RouteSettings settings) {
               switch (settings.name) {
                 case SplashScreen.routeName:
@@ -106,8 +125,12 @@ class _MyAppState extends State<MyApp> {
                     );
                   });
                 case MainPage.routeName:
+                  MainPageArguments arguments =
+                      settings.arguments as MainPageArguments;
                   return MaterialPageRoute(builder: (context) {
-                    return const MainPage();
+                    return MainPage(
+                      initialIndex: arguments.initialIndex,
+                    );
                   });
                 case SignaturePage.routeName:
                   SignaturePageArguments arguments =
@@ -178,6 +201,10 @@ class _MyAppState extends State<MyApp> {
                       email: arguments.email,
                     );
                   });
+                case ReceiverSettingsPage.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const ReceiverSettingsPage();
+                  });
                 case AddressSettingsPage.routeName:
                   return MaterialPageRoute(builder: (context) {
                     return const AddressSettingsPage();
@@ -189,6 +216,10 @@ class _MyAppState extends State<MyApp> {
                 case CheckBiometric.routeName:
                   return MaterialPageRoute(builder: (context) {
                     return const CheckBiometric();
+                  });
+                case NotificationPage.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const NotificationPage();
                   });
                 default:
                   return MaterialPageRoute(

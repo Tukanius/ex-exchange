@@ -1,16 +1,16 @@
 part '../../parts/general_parts/bank_name.dart';
 
-class BankName {
+class BankNames {
   String? code;
   String? name;
 
-  BankName({
+  BankNames({
     this.code,
     this.name,
   });
-  static $fromJson(Map<String, dynamic> json) => _$BankNameFromJson(json);
+  static $fromJson(Map<String, dynamic> json) => _$BankNamesFromJson(json);
 
-  factory BankName.fromJson(Map<String, dynamic> json) =>
-      _$BankNameFromJson(json);
-  Map<String, dynamic> toJson() => _$BankNameToJson(this);
+  factory BankNames.fromJson(Map<String, dynamic> json) =>
+      _$BankNamesFromJson(json);
+  Map<String, dynamic> toJson() => _$BankNamesToJson(this);
 }

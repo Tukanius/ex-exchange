@@ -24,6 +24,7 @@ class User {
   String? otpMethod;
   String? message;
   bool? contract;
+  String? deviceToken;
   User({
     this.username,
     this.password,
@@ -48,6 +49,7 @@ class User {
     this.otpMethod,
     this.message,
     this.contract,
+    this.deviceToken,
   });
 
   static $fromJson(Map<String, dynamic> json) => _$UserFromJson(json);

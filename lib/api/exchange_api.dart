@@ -12,7 +12,7 @@ class ExchangeApi extends HttpRequest {
   }
 
   onTrade(Exchange data) async {
-    var res = await post('/trade', data: data.toJson(), handler: false);
+    var res = await post('/trade', data: data.toJson(), handler: true);
     return AccountTransfer.fromJson(res as Map<String, dynamic>);
   }
 

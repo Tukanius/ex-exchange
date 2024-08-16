@@ -1,6 +1,4 @@
 import 'package:flutter/cupertino.dart';
-// import 'package:green_score/main.dart';
-// import 'package:green_score/services/dialog.dart';
 
 class HttpHandler {
   int? statusCode;

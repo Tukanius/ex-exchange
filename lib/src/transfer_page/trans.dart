@@ -5,7 +5,9 @@ import 'dart:async';
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -22,8 +24,11 @@ import 'package:wx_exchange_flutter/models/result.dart';
 import 'package:wx_exchange_flutter/models/user.dart';
 import 'package:wx_exchange_flutter/provider/exchange_provider.dart';
 import 'package:wx_exchange_flutter/provider/general_provider.dart';
-import 'package:wx_exchange_flutter/src/exchange_page/signature/signature_check_page.dart';
+import 'package:wx_exchange_flutter/src/exchange_page/signature/signature_page.dart';
 import 'package:wx_exchange_flutter/src/history_page/transfer_detail.dart';
+import 'package:wx_exchange_flutter/utils/currency_formatter.dart';
+import 'package:wx_exchange_flutter/utils/utils.dart';
+// import 'package:wx_exchange_flutter/utils/utils.dart';
 import 'package:wx_exchange_flutter/widget/ui/animated_text_field/animated_textfield.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
 
@@ -35,6 +40,7 @@ class TransferPage extends StatefulWidget {
 }
 
 class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
+  GlobalKey<FormBuilderState> fbkey = GlobalKey<FormBuilderState>();
   FocusNode mnt = FocusNode();
   FocusNode yen = FocusNode();
   bool confirmterm = false;
@@ -52,7 +58,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
   int limitHistory = 10;
   Result result = Result();
   Result resultHistory = Result();
-
+  // final Utils _utils = Utils();
   TextEditingController mntController = TextEditingController();
   TextEditingController jpnController = TextEditingController();
   RefreshController refreshController =
@@ -62,6 +68,36 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
   User user = User();
   General general = General();
   bool tradeSubmit = false;
+
+  @override
+  void initState() {
+    super.initState();
+    bankName.addListener(_onFocusChange);
+    accountNumber.addListener(_onFocusChange);
+    swiftCode.addListener(_onFocusChange);
+    branchName.addListener(_onFocusChange);
+    branchAddress.addListener(_onFocusChange);
+    accountName.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+  // void _formatInput() {
+  //   // Get the raw input from the controller
+  //   String rawText = mntController.text;
+
+  //   // Format the input using the updated formatCurrency method
+  //   String formattedText = _utils.formatCurrency(rawText);
+
+  //   // Update the text with the formatted value
+  //   mntController.value = TextEditingValue(
+  //     text: formattedText,
+  //     selection: TextSelection.collapsed(offset: formattedText.length),
+  //   );
+  // }
 
   @override
   afterFirstLayout(BuildContext context) async {
@@ -121,46 +157,59 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
     });
   }
 
+  bool isValueErrorLimit = false;
+
   onChange(String query) async {
-    setState(() {
-      isValueError = query.length < 3;
-      print(isValueError);
-    });
-    Exchange data = Exchange();
-    if (timer != null) timer!.cancel();
-    setState(() {
-      tradeSubmit = true;
-    });
-    timer = Timer(const Duration(milliseconds: 1000), () async {
-      if (!mounted) return;
-      try {
-        data.type = "TRANSFER";
-        data.fromCurrency = "JPY";
-        data.toCurrency = "MNT";
-        data.fromAmount = num.parse(query);
-        num.parse(query) >= 100
-            ? dataReceive = await ExchangeApi().tradeConvertor(data)
-            : SizedBox();
+    print('=======query======');
+    final cleanValue = query.replaceAll(',', '');
+    print(cleanValue);
+    print('=======query======');
+
+    if (cleanValue != '') {
+      setState(() {
+        isValueError = num.parse(cleanValue) < general.minMax!.min!;
+        isValueErrorLimit = num.parse(cleanValue) > general.minMax!.max!;
+        print(isValueErrorLimit);
+        print(isValueError);
+      });
+      Exchange data = Exchange();
+      if (timer != null) timer!.cancel();
+      setState(() {
+        tradeSubmit = true;
+      });
+      timer = Timer(const Duration(milliseconds: 500), () async {
         if (!mounted) return;
-        setState(() {
-          jpnController.text = dataReceive.toAmount?.toString() ?? '0';
-        });
-        setState(() {
-          tradeSubmit = false;
-        });
-      } catch (e) {
-        // end bur yg utga ni solih bolomjgui bol ym gargaj irh ystoi bha ahhah
-        print(e.toString());
-        if (mounted) {
+        try {
+          data.type = "TRANSFER";
+          data.fromCurrency = "JPY";
+          data.toCurrency = "MNT";
+          data.fromAmount = num.parse(cleanValue);
+          num.parse(cleanValue) >= general.minMax!.min!
+              ? dataReceive = await ExchangeApi().tradeConvertor(data)
+              : SizedBox();
+          if (!mounted) return;
           setState(() {
-            jpnController.text = '0';
+            jpnController.text =
+                Utils().formatTextCustom(dataReceive.toAmount ?? 0);
           });
           setState(() {
             tradeSubmit = false;
           });
+        } catch (e) {
+          print(e.toString());
+          if (mounted) {
+            setState(() {
+              jpnController.text = '0';
+              dataReceive.fee = 0;
+              dataReceive.toValue = 0;
+            });
+            setState(() {
+              tradeSubmit = false;
+            });
+          }
         }
-      }
-    });
+      });
+    }
   }
 
 // on FormatException {
@@ -177,6 +226,19 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
   @override
   void dispose() {
     timer?.cancel();
+    bankName.removeListener(_onFocusChange);
+    accountNumber.removeListener(_onFocusChange);
+    swiftCode.removeListener(_onFocusChange);
+    branchName.removeListener(_onFocusChange);
+    branchAddress.removeListener(_onFocusChange);
+    accountName.removeListener(_onFocusChange);
+
+    bankName.dispose();
+    accountNumber.dispose();
+    swiftCode.dispose();
+    branchName.dispose();
+    branchAddress.dispose();
+    accountName.dispose();
     super.dispose();
   }
 
@@ -191,7 +253,9 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
     } else {
       if (isValueError == false) {
         setState(() {
-          mntController.text.length >= 3
+          print(mntController.text);
+          var res = mntController.text.replaceAll(',', '');
+          num.parse(res) >= general.minMax!.min!
               ? isValueError = false
               : isValueError = true;
           print(isValueError);
@@ -225,7 +289,10 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
       print(isSetUser);
       print(purposeTrade);
 
-      if (isValueError == false && isSetUser == true && purposeTrade == true) {
+      if (isValueError == false &&
+          isValueErrorLimit == false &&
+          isSetUser == true &&
+          purposeTrade == true) {
         confirm(context, info);
       } else {
         print("error");
@@ -310,15 +377,21 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                                   onChanged: (query) {
                                     onChange(query);
                                   },
-                                  labelText: 'Дүн  / лимит: 5,000,000 /',
+                                  onComplete: () {
+                                    FocusScope.of(context).unfocus();
+                                  },
+                                  autoFocus: false,
+                                  labelText: 'Илгээх дүн',
                                   name: 'mnt',
                                   focusNode: mnt,
                                   borderColor: isValueError ? redError : blue,
                                   colortext: dark,
+                                  hintText: '¥ 0',
+                                  hintTextColor: hintColor,
                                   inputType: TextInputType.number,
                                   inputFormatters: <TextInputFormatter>[
-                                    FilteringTextInputFormatter.allow(
-                                        RegExp(r'[0-9]')),
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    ThousandsSeparatorFormatter(),
                                   ],
                                   controller: mntController,
                                   prefixIcon: Row(
@@ -343,7 +416,24 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                                         top: 4,
                                       ),
                                       child: Text(
-                                        'Арилжих хамгийн бага утга 100.',
+                                        'Гуйвуулгын хамгийн бага дүн ¥ ${Utils().formatTextCustom(general.minMax!.min)}.',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: redError,
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox(),
+                              isValueErrorLimit == true
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 32,
+                                        right: 16,
+                                        top: 4,
+                                      ),
+                                      child: Text(
+                                        'Гуйвуулгын дүнгийн лимит хэтэрсэн',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
@@ -419,12 +509,18 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                                 child: AnimatedTextField(
                                   floatLabel: FloatingLabelBehavior.always,
                                   readOnly: true,
-                                  labelText: 'Илгээх дүн / лимит: 25,000,000 /',
+                                  labelText: 'Дүн',
                                   name: 'yen',
+                                  autoFocus: false,
                                   focusNode: yen,
                                   borderColor: blue,
                                   colortext: dark,
+                                  hintText: '₮ 0',
+                                  hintTextColor: hintColor,
                                   controller: jpnController,
+                                  onComplete: () {
+                                    FocusScope.of(context).unfocus();
+                                  },
                                   prefixIcon: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -482,7 +578,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                           height: 16,
                         ),
                         Text(
-                          '1 JPY = ${dataReceive.toValue ?? 0} MNT',
+                          '1 JPY = ${general.jpyCurrency?.sell ?? 0} MNT',
                           style: TextStyle(
                               color: dark,
                               fontSize: 14,
@@ -492,7 +588,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                           height: 8,
                         ),
                         Text(
-                          'Шимтгэл: ₮ ${dataReceive.fee ?? 0}',
+                          'Шимтгэл: ₮ ${Utils().formatTextCustom(dataReceive.fee ?? 0)}',
                           style: TextStyle(
                               color: dark,
                               fontSize: 14,
@@ -779,22 +875,22 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
     );
   }
 
+  FocusNode bankName = FocusNode();
+  FocusNode accountNumber = FocusNode();
+  FocusNode swiftCode = FocusNode();
+  FocusNode branchName = FocusNode();
+  FocusNode branchAddress = FocusNode();
+  FocusNode accountName = FocusNode();
+
+  TextEditingController bankNameController = TextEditingController();
+  TextEditingController accountNumberController = TextEditingController();
+  TextEditingController swiftCodeController = TextEditingController();
+  TextEditingController branchNameController = TextEditingController();
+  TextEditingController branchAddressController = TextEditingController();
+  TextEditingController accountNameController = TextEditingController();
+  int selectedContainerIndex = -1;
+
   addReceiver(BuildContext context, General general) {
-    FocusNode userName = FocusNode();
-    FocusNode userNameKanjiFocusNode = FocusNode();
-    FocusNode cityName = FocusNode();
-    FocusNode userId = FocusNode();
-    FocusNode userCardNo = FocusNode();
-    FocusNode receiverPhone = FocusNode();
-
-    TextEditingController userNameController = TextEditingController();
-    TextEditingController userNameKanjiController = TextEditingController();
-    TextEditingController cityNameController = TextEditingController();
-    TextEditingController userIdController = TextEditingController();
-    TextEditingController userCardNoController = TextEditingController();
-    TextEditingController receiverPhoneController = TextEditingController();
-    int selectedContainerIndex = -1;
-
     Widget buildContainer(data, int index) {
       return Container(
         margin: EdgeInsets.only(right: 8),
@@ -817,9 +913,13 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SvgPicture.asset(
-                  'assets/svg/check.svg',
-                ),
+                selectedContainerIndex == index
+                    ? SvgPicture.asset(
+                        'assets/svg/check.svg',
+                      )
+                    : SvgPicture.asset(
+                        'assets/svg/uncheck.svg',
+                      ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -835,7 +935,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                         ),
                       ),
                       Text(
-                        '${data.name}',
+                        '${data.accountName}',
                         style: TextStyle(
                           color: dark,
                           fontSize: 14,
@@ -867,48 +967,48 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            userName.addListener(() {
-              if (userName.hasFocus) {
-                setState(() {});
-              } else {
-                setState(() {});
-              }
-            });
-            userNameKanjiFocusNode.addListener(() {
-              if (userNameKanjiFocusNode.hasFocus) {
-                setState(() {});
-              } else {
-                setState(() {});
-              }
-            });
-            cityName.addListener(() {
-              if (cityName.hasFocus) {
-                setState(() {});
-              } else {
-                setState(() {});
-              }
-            });
-            userId.addListener(() {
-              if (userId.hasFocus) {
-                setState(() {});
-              } else {
-                setState(() {});
-              }
-            });
-            userCardNo.addListener(() {
-              if (userCardNo.hasFocus) {
-                setState(() {});
-              } else {
-                setState(() {});
-              }
-            });
-            receiverPhone.addListener(() {
-              if (receiverPhone.hasFocus) {
-                setState(() {});
-              } else {
-                setState(() {});
-              }
-            });
+            // bankName.addListener(() {
+            //   if (bankName.hasFocus) {
+            //     setState(() {});
+            //   } else {
+            //     setState(() {});
+            //   }
+            // });
+            // accountNumber.addListener(() {
+            //   if (accountNumber.hasFocus) {
+            //     setState(() {});
+            //   } else {
+            //     setState(() {});
+            //   }
+            // });
+            // swiftCode.addListener(() {
+            //   if (swiftCode.hasFocus) {
+            //     setState(() {});
+            //   } else {
+            //     setState(() {});
+            //   }
+            // });
+            // branchName.addListener(() {
+            //   if (branchName.hasFocus) {
+            //     setState(() {});
+            //   } else {
+            //     setState(() {});
+            //   }
+            // });
+            // branchAddress.addListener(() {
+            //   if (branchAddress.hasFocus) {
+            //     setState(() {});
+            //   } else {
+            //     setState(() {});
+            //   }
+            // });
+            // accountName.addListener(() {
+            //   if (accountName.hasFocus) {
+            //     setState(() {});
+            //   } else {
+            //     setState(() {});
+            //   }
+            // });
             return Container(
               width: MediaQuery.of(context).size.width,
               child: Container(
@@ -953,18 +1053,32 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                                         key: ValueKey(index),
                                         onTap: () {
                                           setState(() {
-                                            selectedContainerIndex = index;
+                                            // Toggle selection
+                                            if (selectedContainerIndex ==
+                                                index) {
+                                              selectedContainerIndex = -1;
+                                              bankNameController.clear();
+                                              accountNumberController.clear();
+                                              swiftCodeController.clear();
+                                              branchNameController.clear();
+                                              branchAddressController.clear();
+                                              accountNameController.clear();
+                                            } else {
+                                              selectedContainerIndex = index;
+                                              bankNameController.text =
+                                                  data.bankName;
+                                              accountNumberController.text =
+                                                  data.accountNumber;
+                                              swiftCodeController.text =
+                                                  data.swiftCode;
+                                              branchNameController.text =
+                                                  data.branchName;
+                                              branchAddressController.text =
+                                                  data.branchAddress;
+                                              accountNameController.text =
+                                                  data.accountName;
+                                            }
                                           });
-                                          userNameController.text = data.name;
-                                          userNameKanjiController.text =
-                                              data.nameEng;
-                                          cityNameController.text =
-                                              data.cityName;
-                                          userIdController.text = data.idCardNo;
-                                          userCardNoController.text =
-                                              data.bankCardNo;
-                                          receiverPhoneController.text =
-                                              data.phone;
                                         },
                                         child: buildContainer(data, index),
                                       );
@@ -974,147 +1088,208 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                               ),
                             )
                           : SizedBox(),
-                      AnimatedTextField(
-                        controller: userNameController,
-                        labelText: 'Хүлээн авагчийн нэр',
-                        name: 'receiverName',
-                        focusNode: userName,
-                        borderColor: dark,
-                        colortext: dark,
-                        suffixIcon: userName.hasFocus == true
-                            ? GestureDetector(
-                                onTap: () {
-                                  userNameController.clear();
-                                },
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: black,
-                                ),
-                              )
-                            : null,
+                      FormBuilder(
+                        key: fbkey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AnimatedTextField(
+                              controller: bankNameController,
+                              labelText: 'Bank name:',
+                              name: 'bankName',
+                              focusNode: bankName,
+                              borderColor: blue,
+                              colortext: dark,
+                              suffixIcon: bankName.hasFocus == true
+                                  ? GestureDetector(
+                                      onTap: () {
+                                        bankNameController.clear();
+                                      },
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        color: black,
+                                      ),
+                                    )
+                                  : null,
+                              validator: FormBuilderValidators.compose([
+                                (value) {
+                                  return validateName(value.toString());
+                                }
+                              ]),
+                            ),
+                            SizedBox(height: 16),
+                            AnimatedTextField(
+                              controller: accountNumberController,
+                              labelText: 'Account number:',
+                              name: 'accountNumber',
+                              focusNode: accountNumber,
+                              borderColor: blue,
+                              colortext: dark,
+                              suffixIcon: accountNumber.hasFocus == true
+                                  ? GestureDetector(
+                                      onTap: () {
+                                        accountNumberController.clear();
+                                      },
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        color: black,
+                                      ),
+                                    )
+                                  : null,
+                              validator: FormBuilderValidators.compose([
+                                (value) {
+                                  return validateNumber(value.toString());
+                                }
+                              ]),
+                            ),
+                            SizedBox(height: 16),
+                            AnimatedTextField(
+                              controller: swiftCodeController,
+                              labelText: 'Swift code:',
+                              name: 'swiftCode',
+                              focusNode: swiftCode,
+                              borderColor: blue,
+                              colortext: dark,
+                              suffixIcon: swiftCode.hasFocus == true
+                                  ? GestureDetector(
+                                      onTap: () {
+                                        swiftCodeController.clear();
+                                      },
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        color: black,
+                                      ),
+                                    )
+                                  : null,
+                              validator: FormBuilderValidators.compose([
+                                (value) {
+                                  return validateName(value.toString());
+                                }
+                              ]),
+                            ),
+                            SizedBox(height: 16),
+                            AnimatedTextField(
+                              controller: branchNameController,
+                              labelText: 'Branch name:',
+                              name: 'branchName',
+                              focusNode: branchName,
+                              borderColor: blue,
+                              colortext: dark,
+                              suffixIcon: branchName.hasFocus == true
+                                  ? GestureDetector(
+                                      onTap: () {
+                                        branchNameController.clear();
+                                      },
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        color: black,
+                                      ),
+                                    )
+                                  : null,
+                              validator: FormBuilderValidators.compose([
+                                (value) {
+                                  return validateName(value.toString());
+                                }
+                              ]),
+                            ),
+                            SizedBox(height: 16),
+                            AnimatedTextField(
+                              controller: branchAddressController,
+                              labelText: 'Branch address:',
+                              name: 'branchAddress',
+                              focusNode: branchAddress,
+                              borderColor: blue,
+                              colortext: dark,
+                              suffixIcon: branchAddress.hasFocus == true
+                                  ? GestureDetector(
+                                      onTap: () {
+                                        branchAddressController.clear();
+                                      },
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        color: black,
+                                      ),
+                                    )
+                                  : null,
+                              validator: FormBuilderValidators.compose([
+                                (value) {
+                                  return validateName(value.toString());
+                                }
+                              ]),
+                            ),
+                            SizedBox(height: 16),
+                            AnimatedTextField(
+                              controller: accountNameController,
+                              labelText: 'Account name:',
+                              name: 'accountName',
+                              focusNode: accountName,
+                              borderColor: blue,
+                              colortext: dark,
+                              suffixIcon: accountName.hasFocus == true
+                                  ? GestureDetector(
+                                      onTap: () {
+                                        accountNameController.clear();
+                                      },
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        color: black,
+                                      ),
+                                    )
+                                  : null,
+                              validator: FormBuilderValidators.compose([
+                                (value) {
+                                  return validateName(value.toString());
+                                }
+                              ]),
+                            ),
+                          ],
+                        ),
                       ),
-                      SizedBox(height: 16),
-                      AnimatedTextField(
-                        controller: userNameKanjiController,
-                        labelText: 'Хүлээн авагчийн нэр /ханзаар/',
-                        name: 'receiverNameKanji',
-                        focusNode: userNameKanjiFocusNode,
-                        borderColor: dark,
-                        colortext: dark,
-                        suffixIcon: userNameKanjiFocusNode.hasFocus == true
-                            ? GestureDetector(
-                                onTap: () {
-                                  userNameKanjiController.clear();
-                                },
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: black,
-                                ),
-                              )
-                            : null,
+                      SizedBox(
+                        height: 16,
                       ),
-                      SizedBox(height: 16),
-                      AnimatedTextField(
-                        controller: cityNameController,
-                        labelText: 'Хотын нэр',
-                        name: 'cityName',
-                        focusNode: cityName,
-                        borderColor: dark,
-                        colortext: dark,
-                        suffixIcon: cityName.hasFocus == true
-                            ? GestureDetector(
-                                onTap: () {
-                                  cityNameController.clear();
-                                },
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: black,
-                                ),
-                              )
-                            : null,
-                      ),
-                      SizedBox(height: 16),
-                      AnimatedTextField(
-                        controller: userIdController,
-                        labelText: 'Үнэмлэхний дугаар',
-                        name: 'cityName',
-                        focusNode: userId,
-                        borderColor: dark,
-                        colortext: dark,
-                        suffixIcon: userId.hasFocus == true
-                            ? GestureDetector(
-                                onTap: () {
-                                  userIdController.clear();
-                                },
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: black,
-                                ),
-                              )
-                            : null,
-                      ),
-                      SizedBox(height: 16),
-                      AnimatedTextField(
-                        controller: userCardNoController,
-                        labelText: 'Данс буюу картны дугаар',
-                        name: 'cityName',
-                        focusNode: userCardNo,
-                        borderColor: dark,
-                        colortext: dark,
-                        suffixIcon: userCardNo.hasFocus == true
-                            ? GestureDetector(
-                                onTap: () {
-                                  userCardNoController.clear();
-                                },
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: black,
-                                ),
-                              )
-                            : null,
-                      ),
-                      SizedBox(height: 16),
-                      AnimatedTextField(
-                        controller: receiverPhoneController,
-                        labelText: 'Хүлээн авагчийн утасны дугаар',
-                        name: 'idNumber',
-                        focusNode: receiverPhone,
-                        borderColor: dark,
-                        colortext: dark,
-                        suffixIcon: receiverPhone.hasFocus == true
-                            ? GestureDetector(
-                                onTap: () {
-                                  receiverPhoneController.clear();
-                                },
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: black,
-                                ),
-                              )
-                            : null,
+                      Container(
+                        width: MediaQuery.of(context).size.width,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: borderColor, width: 1),
+                          color: grayAccent,
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text(
+                            'Үйлчлүүлэгч та гуйвуулга хийх банкны мэдээллээ сайтар шалгаж илгээнэ үү!',
+                            style: TextStyle(
+                              color: dark,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
                       ),
                       SizedBox(height: 24),
                       CustomButton(
                         onClick: () {
-                          if (userNameController.text != "" &&
-                              userNameKanjiController.text != "" &&
-                              cityNameController.text != "" &&
-                              userIdController.text != "" &&
-                              userCardNoController.text != "" &&
-                              receiverPhoneController.text != "") {
-                            setState(() {
-                              isSetUser = true;
-                            });
-                            updateReceiverBox(userNameController.text);
-                            info.name = userNameController.text;
-                            info.nameEng = userNameKanjiController.text;
-                            info.cityName = cityNameController.text;
-                            info.idCardNo = userIdController.text;
-                            info.bankCardNo = userCardNoController.text;
-                            info.phone = receiverPhoneController.text;
-                            Navigator.of(context).pop();
-                          } else {
-                            showErrorReceiver();
+                          if (fbkey.currentState!.saveAndValidate()) {
+                            if (bankNameController.text != "" &&
+                                accountNumberController.text != "" &&
+                                swiftCodeController.text != "" &&
+                                branchNameController.text != "" &&
+                                branchAddressController.text != "" &&
+                                accountNameController.text != "") {
+                              setState(() {
+                                isSetUser = true;
+                              });
+                              updateReceiverBox(accountNameController.text);
+                              info.bankName = bankNameController.text;
+                              info.accountNumber = accountNumberController.text;
+                              info.swiftCode = swiftCodeController.text;
+                              info.branchName = branchNameController.text;
+                              info.branchAddress = branchAddressController.text;
+                              info.accountName = accountNameController.text;
+                              Navigator.of(context).pop();
+                              FocusScope.of(context).unfocus();
+                            }
                           }
                         },
                         buttonColor: blue,
@@ -1193,6 +1368,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                                 color: black, fontFamily: "Montserrat"),
                           ),
                           onPressed: () {
+                            FocusScope.of(context).unfocus();
                             Navigator.of(context).pop();
                           },
                         ),
@@ -1245,6 +1421,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                       children: [
                         GestureDetector(
                           onTap: () {
+                            FocusScope.of(context).unfocus();
                             Navigator.of(context).pop();
                           },
                           child: Container(
@@ -1273,6 +1450,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                                     purposeTrade = true;
                                   });
                                   Navigator.of(context).pop();
+                                  FocusScope.of(context).unfocus();
                                 },
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1343,6 +1521,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                       children: [
                         GestureDetector(
                           onTap: () {
+                            FocusScope.of(context).unfocus();
                             Navigator.of(context).pop();
                           },
                           child: SvgPicture.asset('assets/svg/close.svg'),
@@ -1370,143 +1549,383 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '${data.name}',
-                              style: TextStyle(
-                                color: dark,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(
-                              height: 8,
-                            ),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: 'Дансны дугаар: ',
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Bank name:',
                                     style: TextStyle(
                                       color: dark,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
-                                  TextSpan(
-                                    text: '${data.bankCardNo}',
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '${data.bankName}',
                                     style: TextStyle(
                                       color: dark,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                             SizedBox(
                               height: 8,
                             ),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: 'Хот: ',
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Account number:',
                                     style: TextStyle(
                                       color: dark,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
-                                  TextSpan(
-                                    text: '${data.cityName}',
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '${data.accountNumber}',
                                     style: TextStyle(
                                       color: dark,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                             SizedBox(
                               height: 8,
                             ),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: 'Үнэмлэхний дугаар: ',
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Swift code:',
                                     style: TextStyle(
                                       color: dark,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
-                                  TextSpan(
-                                    text: '${data.idCardNo}',
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '${data.swiftCode}',
                                     style: TextStyle(
                                       color: dark,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                             SizedBox(
                               height: 8,
                             ),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: 'Утасны дугаар: ',
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Branch name:',
                                     style: TextStyle(
                                       color: dark,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
-                                  TextSpan(
-                                    text: '${data.phone}',
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '${data.branchName}',
                                     style: TextStyle(
                                       color: dark,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                             SizedBox(
                               height: 8,
                             ),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: 'Төлбөрийн зориулалт: ',
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Branch address:',
                                     style: TextStyle(
                                       color: dark,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
-                                  TextSpan(
-                                    text: '${purpose}',
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '${data.branchAddress}',
                                     style: TextStyle(
                                       color: dark,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(
+                              height: 8,
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Account name:',
+                                    style: TextStyle(
+                                      color: dark,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '${data.accountName}',
+                                    style: TextStyle(
+                                      color: dark,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(
+                              height: 8,
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Төлбөрийн зориулалт:',
+                                    style: TextStyle(
+                                      color: dark,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '${purpose}',
+                                    style: TextStyle(
+                                      color: dark,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
                     ),
+                    // Container(
+                    //   width: MediaQuery.of(context).size.width,
+                    //   decoration: BoxDecoration(
+                    //     borderRadius: BorderRadius.circular(16),
+                    //     border: Border.all(width: 1, color: borderColor),
+                    //   ),
+                    //   child: Padding(
+                    //     padding: EdgeInsets.all(16),
+                    //     child: Column(
+                    //       crossAxisAlignment: CrossAxisAlignment.start,
+                    //       children: [
+                    //         RichText(
+                    //           text: TextSpan(
+                    //             children: [
+                    //               TextSpan(
+                    //                 text: 'Bank name: ',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 14,
+                    //                   fontWeight: FontWeight.w400,
+                    //                 ),
+                    //               ),
+                    //               TextSpan(
+                    //                 text: '${data.bankName}',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 16,
+                    //                   fontWeight: FontWeight.w600,
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //         SizedBox(
+                    //           height: 8,
+                    //         ),
+                    //         RichText(
+                    //           text: TextSpan(
+                    //             children: [
+                    //               TextSpan(
+                    //                 text: 'Account number: ',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 14,
+                    //                   fontWeight: FontWeight.w400,
+                    //                 ),
+                    //               ),
+                    //               TextSpan(
+                    //                 text: '${data.accountNumber}',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 16,
+                    //                   fontWeight: FontWeight.w600,
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //         SizedBox(
+                    //           height: 8,
+                    //         ),
+                    //         RichText(
+                    //           text: TextSpan(
+                    //             children: [
+                    //               TextSpan(
+                    //                 text: 'Swift code: ',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 14,
+                    //                   fontWeight: FontWeight.w400,
+                    //                 ),
+                    //               ),
+                    //               TextSpan(
+                    //                 text: '${data.swiftCode}',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 16,
+                    //                   fontWeight: FontWeight.w600,
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //         SizedBox(
+                    //           height: 8,
+                    //         ),
+                    //         RichText(
+                    //           text: TextSpan(
+                    //             children: [
+                    //               TextSpan(
+                    //                 text: 'Branch name: ',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 14,
+                    //                   fontWeight: FontWeight.w400,
+                    //                 ),
+                    //               ),
+                    //               TextSpan(
+                    //                 text: '${data.branchName}',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 16,
+                    //                   fontWeight: FontWeight.w600,
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //         SizedBox(
+                    //           height: 8,
+                    //         ),
+                    //         RichText(
+                    //           text: TextSpan(
+                    //             children: [
+                    //               TextSpan(
+                    //                 text: 'Branch address: ',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 14,
+                    //                   fontWeight: FontWeight.w400,
+                    //                 ),
+                    //               ),
+                    //               TextSpan(
+                    //                 text: '${data.branchAddress}',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 16,
+                    //                   fontWeight: FontWeight.w600,
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //         SizedBox(
+                    //           height: 8,
+                    //         ),
+                    //         RichText(
+                    //           text: TextSpan(
+                    //             children: [
+                    //               TextSpan(
+                    //                 text: 'Account name: ',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 14,
+                    //                   fontWeight: FontWeight.w400,
+                    //                 ),
+                    //               ),
+                    //               TextSpan(
+                    //                 text: '${data.accountName}',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 16,
+                    //                   fontWeight: FontWeight.w600,
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //         SizedBox(
+                    //           height: 8,
+                    //         ),
+                    //         RichText(
+                    //           text: TextSpan(
+                    //             children: [
+                    //               TextSpan(
+                    //                 text: 'Төлбөрийн зориулалт: ',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 14,
+                    //                   fontWeight: FontWeight.w400,
+                    //                 ),
+                    //               ),
+                    //               TextSpan(
+                    //                 text: '${purpose}',
+                    //                 style: TextStyle(
+                    //                   color: dark,
+                    //                   fontSize: 16,
+                    //                   fontWeight: FontWeight.w600,
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
                     SizedBox(
                       height: 8,
                     ),
@@ -1522,7 +1941,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                       height: 8,
                     ),
                     Text(
-                      'Шимтгэл:  ₮ ${dataReceive.fee ?? 0}',
+                      'Шимтгэл:  ₮ ${Utils().formatTextCustom(dataReceive.fee ?? 0)}',
                       style: TextStyle(
                         color: dark,
                         fontSize: 14,
@@ -1533,7 +1952,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                       height: 8,
                     ),
                     Text(
-                      'Авах дүн: ₮ ${dataReceive.toAmount ?? 0}',
+                      'Гуйвуулах дүн: ¥ ${mntController.text}',
                       style: TextStyle(
                         color: dark,
                         fontSize: 14,
@@ -1544,7 +1963,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                       height: 8,
                     ),
                     Text(
-                      'Төлөх дүн: ₮ ${dataReceive.totalAmount ?? 0}',
+                      'Нийт төлөх дүн: ₮ ${Utils().formatCurrencyCustom(dataReceive.totalAmount ?? 0)}',
                       style: TextStyle(
                         color: dark,
                         fontSize: 14,
@@ -1556,46 +1975,56 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                     ),
                     CustomButton(
                       onClick: () {
-                        setState(() {
-                          confirmAll = true;
-                        });
-                        setState(
-                          () {
-                            tools.toUpdateTransfer(
-                              newuserName: data.name!,
-                              newPhone: data.phone!,
-                              newPurpose: purpose,
-                              newcityName: data.cityName!,
-                              newidCardNo: data.idCardNo!,
-                              newnameEng: data.nameEng!,
-                              newbankCardNo: data.bankCardNo!,
-                            );
-                            tools.updateAll(
-                              newmnt: mntController.text,
-                              newcurrency: jpnController.text,
-                              newtoValue: dataReceive.toValue.toString(),
-                              newtotalAmount:
-                                  dataReceive.totalAmount.toString(),
-                              newfee: dataReceive.fee.toString(),
-                              newtoAmount: dataReceive.toAmount.toString(),
-                            );
-                          },
-                        );
-                        setState(() {
-                          confirmAll = false;
-                        });
+                        try {
+                          setState(() {
+                            confirmAll = true;
+                          });
+                          setState(
+                            () {
+                              tools.toUpdateTransfer(
+                                newBankName: data.bankName!,
+                                newAccountNumber: data.accountNumber!,
+                                newSwiftCode: data.swiftCode!,
+                                newBranchName: data.branchName!,
+                                newBranchAddress: data.branchAddress!,
+                                newAccountName: data.accountName!,
+                                newPurpose: purpose,
+                              );
+                              final res =
+                                  mntController.text.replaceAll(',', '');
 
-                        Navigator.of(context).pop();
-                        setState(() {
-                          user.contract == false
-                              ? termsofservice()
-                              : Navigator.of(context).pushNamed(
-                                  SignaturePage.routeName,
-                                  arguments: SignaturePageArguments(
-                                    pushedFrom: 'TRANSFER',
-                                  ),
-                                );
-                        });
+                              tools.updateAll(
+                                newmnt: num.parse(res),
+                                newcurrency: jpnController.text,
+                                newtoValue: dataReceive.toValue.toString(),
+                                newtotalAmount: dataReceive.totalAmount!,
+                                newfee: dataReceive.fee!,
+                                newtoAmount: dataReceive.toAmount.toString(),
+                              );
+                            },
+                          );
+                          setState(() {
+                            confirmAll = false;
+                          });
+                          FocusScope.of(context).unfocus();
+                          Navigator.of(context).pop();
+                          FocusScope.of(context).unfocus();
+                          setState(() {
+                            user.contract == false
+                                ? termsofservice()
+                                : Navigator.of(context).pushNamed(
+                                    SignaturePage.routeName,
+                                    arguments: SignaturePageArguments(
+                                      pushedFrom: 'TRANSFER',
+                                    ),
+                                  );
+                          });
+                        } catch (e) {
+                          setState(() {
+                            confirmAll = false;
+                          });
+                          print(e.toString());
+                        }
                       },
                       buttonColor: blue,
                       isLoading: confirmAll,
@@ -1915,7 +2344,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                                 ? Navigator.of(context).pushNamed(
                                     SignaturePage.routeName,
                                     arguments: SignaturePageArguments(
-                                      pushedFrom: 'EXCHANGE',
+                                      pushedFrom: 'TRANSFER',
                                     ),
                                   )
                                 : () {};
@@ -1939,4 +2368,45 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
       ),
     );
   }
+}
+
+String? validatePhone(String value) {
+  RegExp regex = RegExp(r'^[0-9]{8,12}$');
+  if (value.isEmpty) {
+    return 'Утасны дугаараа оруулна уу';
+  } else {
+    if (!regex.hasMatch(value)) {
+      return 'Утасны дугаараа шалгана уу';
+    } else {
+      return null;
+    }
+  }
+}
+
+String? validateName(String value) {
+  if (value.isEmpty) {
+    return "Талбарыг заавал бөглөнө үү";
+  }
+  return null;
+}
+
+String? validateNumber(String value) {
+  if (value.isEmpty) {
+    return "Талбарыг заавал бөглөнө үү";
+  } else if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+    return "Зөвхөн тоо оруулна уу";
+  }
+  return null;
+}
+
+String? validateDans(String value) {
+  String pattern = r'^[0-9]{8,12}$';
+  RegExp regex = RegExp(pattern);
+
+  if (value.isEmpty) {
+    return "Талбарыг заавал бөглөнө үү";
+  } else if (!regex.hasMatch(value)) {
+    return "Утга нь 8-12 тоо байх ёстой";
+  }
+  return null; // Valid input
 }

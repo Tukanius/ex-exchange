@@ -6,6 +6,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:wx_exchange_flutter/provider/user_provider.dart';
 import 'package:wx_exchange_flutter/services/dialog.dart';
+import 'package:wx_exchange_flutter/services/navigation.dart';
+import 'package:wx_exchange_flutter/services/notify_service.dart';
+import 'package:wx_exchange_flutter/src/splash_page/splash_page.dart';
 import 'http_handler.dart';
 import '../main.dart';
 
@@ -26,6 +29,7 @@ class HttpRequest {
       {bool handler = true, bool approve = false}) async {
     Response? response;
     final String uri;
+    var token = await UserProvider.getAccessToken();
 
     uri = '$host$version$api';
     debugPrint(uri);
@@ -102,6 +106,27 @@ class HttpRequest {
       //   debugPrint(e.toString());
       // }
 
+      if (token != null && ex.response?.statusCode == 401) {
+        print('====TOKEN from Green score====');
+        print(token);
+        print('====TOKEN from Green score====');
+
+        MyApp.setInvalidToken(MyApp.invalidTokenCount + 1);
+        if (MyApp.invalidTokenCount == 1) {
+          await UserProvider().auth();
+          locator<NavigationService>()
+              .pushNamed(routeName: SplashScreen.routeName);
+          NotifyService().showNotification(
+            title: 'WX Exchange',
+            body: 'Нэвтрэх эрх хүчингүй боллоо',
+          );
+
+          MyApp.setInvalidToken(0);
+
+          return null;
+        }
+        return;
+      }
       HttpHandler? error =
           HttpHandler(statusCode: ex.response?.statusCode).handle(ex.response);
 

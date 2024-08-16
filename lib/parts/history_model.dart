@@ -20,8 +20,8 @@ TradeHistory _$TradeHistoryFromJson(Map<String, dynamic> json) {
     sign: json['sign'] != null ? json['sign'] as String : null,
     name: json['name'] != null ? json['name'] as String : null,
     bankName: json['bankName'] != null ? json['bankName'] as String : null,
-    bankCardNo:
-        json['bankCardNo'] != null ? json['bankCardNo'] as String : null,
+    accountNumber:
+        json['accountNumber'] != null ? json['accountNumber'] as String : null,
     phone: json['phone'] != null ? json['phone'] as String : null,
     tradeStatus:
         json['tradeStatus'] != null ? json['tradeStatus'] as String : null,
@@ -30,8 +30,13 @@ TradeHistory _$TradeHistoryFromJson(Map<String, dynamic> json) {
     description:
         json['description'] != null ? json['description'] as String : null,
     purpose: json['purpose'] != null ? json['purpose'] as String : null,
-    idCardNo: json['idCardNo'] != null ? json['idCardNo'] as String : null,
-    cityName: json['cityName'] != null ? json['cityName'] as String : null,
+    swiftCode: json['swiftCode'] != null ? json['swiftCode'] as String : null,
+    branchName:
+        json['branchName'] != null ? json['branchName'] as String : null,
+    branchAddress:
+        json['branchAddress'] != null ? json['branchAddress'] as String : null,
+    accountName:
+        json['accountName'] != null ? json['accountName'] as String : null,
   );
 }
 
@@ -54,15 +59,19 @@ Map<String, dynamic> _$TradeHistoryToJson(TradeHistory instance) {
   if (instance.sign != null) json['sign'] = instance.sign;
   if (instance.name != null) json['name'] = instance.name;
   if (instance.bankName != null) json['bankName'] = instance.bankName;
-  if (instance.bankCardNo != null) json['bankCardNo'] = instance.bankCardNo;
+  if (instance.accountNumber != null)
+    json['accountNumber'] = instance.accountNumber;
   if (instance.phone != null) json['phone'] = instance.phone;
   if (instance.tradeStatus != null) json['tradeStatus'] = instance.tradeStatus;
   if (instance.createdAt != null) json['createdAt'] = instance.createdAt;
   if (instance.updatedAt != null) json['updatedAt'] = instance.updatedAt;
   if (instance.description != null) json['description'] = instance.description;
   if (instance.purpose != null) json['purpose'] = instance.purpose;
-  if (instance.idCardNo != null) json['idCardNo'] = instance.idCardNo;
-  if (instance.cityName != null) json['cityName'] = instance.cityName;
+  if (instance.swiftCode != null) json['swiftCode'] = instance.swiftCode;
+  if (instance.branchName != null) json['branchName'] = instance.branchName;
+  if (instance.branchAddress != null)
+    json['branchAddress'] = instance.branchAddress;
+  if (instance.accountName != null) json['accountName'] = instance.accountName;
 
   return json;
 }

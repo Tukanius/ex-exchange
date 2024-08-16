@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/models/account_transfer.dart';
 import 'package:wx_exchange_flutter/src/main_page.dart';
+import 'package:wx_exchange_flutter/utils/utils.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
 
 class PaymentDetailPageArguments {
@@ -24,7 +25,6 @@ class PaymentDetailPage extends StatefulWidget {
 
 class _PaymentDetailPageState extends State<PaymentDetailPage> {
   bool dans = false;
-  bool dansner = false;
   bool utga = false;
   bool dun = false;
   @override
@@ -37,7 +37,10 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
           centerTitle: true,
           leading: GestureDetector(
             onTap: () {
-              Navigator.of(context).pushNamed(MainPage.routeName);
+              Navigator.of(context).pushNamed(
+                MainPage.routeName,
+                arguments: MainPageArguments(initialIndex: 0),
+              );
             },
             child: Container(
               margin: EdgeInsets.only(left: 5),
@@ -148,7 +151,6 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                           onTap: () {
                             setState(() {
                               dans = true;
-                              dansner = false;
                               utga = false;
                               dun = false;
                             });
@@ -221,37 +223,6 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                             ),
                           ],
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              dans = false;
-                              dansner = true;
-                              utga = false;
-                              dun = false;
-                            });
-                            Clipboard.setData(ClipboardData(
-                                    text: '${widget.data.accountName}'))
-                                .then(
-                              (value) {
-                                return ScaffoldMessenger.of(context)
-                                    .showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: blue,
-                                    content: Text(
-                                      'Амжилттай хуулсан',
-                                      style: TextStyle(
-                                        color: white,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          child: dansner == false
-                              ? SvgPicture.asset('assets/svg/copy.svg')
-                              : Icon(Icons.check),
-                        ),
                       ],
                     ),
                   ),
@@ -302,7 +273,6 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                           onTap: () {
                             setState(() {
                               dans = false;
-                              dansner = false;
                               utga = true;
                               dun = false;
                             });
@@ -366,7 +336,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                               height: 4,
                             ),
                             Text(
-                              '₮${widget.data.amount}',
+                              '₮${Utils().formatTextCustom(widget.data.amount)}',
                               style: TextStyle(
                                 color: hintText,
                                 fontSize: 14,
@@ -379,7 +349,6 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                           onTap: () {
                             setState(() {
                               dans = false;
-                              dansner = false;
                               utga = false;
                               dun = true;
                             });
@@ -422,19 +391,47 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                     ),
                   ),
                   padding: EdgeInsets.all(16),
-                  child: Text(
-                    'Үйлчлүүлэгч та гадаад луу гуйвуулах мөнгөн дүнг харуулснаар зөвхөн ажлын цагт шимтгэл суутгагдан гадаад гуйвуулга биелэгдэхийг анхаарна уу',
-                    style: TextStyle(
-                      color: dark,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        color: dark,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      children: [
+                        TextSpan(text: 'Үйлчлүүлэгч та гуйвуулах '),
+                        TextSpan(
+                          text: 'мөнгөн дүн',
+                          style: TextStyle(
+                            color: dark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        TextSpan(text: ' болон '),
+                        TextSpan(
+                          text: 'гүйлгээний утгаа',
+                          style: TextStyle(
+                            color: dark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        TextSpan(
+                          text:
+                              ' сайтар шалган илгээнэ үү. Буруу илгээсэн тохиолдолд гуйвуулга буруу хийгдэхийг анхаарна уу!',
+                        ),
+                      ],
                     ),
                   ),
                 ),
                 SizedBox(height: 24),
                 CustomButton(
                   onClick: () {
-                    Navigator.of(context).pushNamed(MainPage.routeName);
+                    Navigator.of(context).pushNamed(
+                      MainPage.routeName,
+                      arguments: MainPageArguments(initialIndex: 0),
+                    );
                   },
                   buttonColor: blue.withOpacity(0.1),
                   isLoading: false,

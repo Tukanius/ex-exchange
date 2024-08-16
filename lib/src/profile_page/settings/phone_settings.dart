@@ -87,7 +87,7 @@ class _PhoneSettingsPageState extends State<PhoneSettingsPage> {
               labelText: 'Утасны дугаар',
               name: 'phone',
               focusNode: phone,
-              borderColor: borderBlackColor,
+              borderColor: blue,
               colortext: dark,
               controller: phoneController,
               suffixIcon: phone.hasFocus == true

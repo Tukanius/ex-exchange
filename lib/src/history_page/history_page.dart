@@ -48,13 +48,17 @@ class _HistoryPageState extends State<HistoryPage> with AfterLayoutMixin {
     });
   }
 
-  changeIndex(int index) {
+  changeIndex(int index) async {
     setState(() {
       currentIndex = index;
-      if (currentIndex == 0) listHistory(page, limit, '');
-      if (currentIndex == 1) listHistory(page, limit, 'PENDING');
-      if (currentIndex == 2) listHistory(page, limit, 'SUCCESS');
-      if (currentIndex == 3) listHistory(page, limit, 'CANCELED');
+      isLoading = true;
+    });
+    if (currentIndex == 0) await listHistory(page, limit, '');
+    if (currentIndex == 1) await listHistory(page, limit, 'PENDING');
+    if (currentIndex == 2) await listHistory(page, limit, 'SUCCESS');
+    if (currentIndex == 3) await listHistory(page, limit, 'CANCELED');
+    setState(() {
+      isLoading = false;
     });
   }
 

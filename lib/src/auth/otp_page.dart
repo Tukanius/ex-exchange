@@ -46,6 +46,7 @@ class _OtpPageState extends State<OtpPage> with AfterLayoutMixin {
   bool isGetCode = false;
   int _counter = 10;
   late Timer _timer;
+  TextEditingController pinput = TextEditingController();
 
   final defaultPinTheme = PinTheme(
     width: 60,
@@ -79,6 +80,7 @@ class _OtpPageState extends State<OtpPage> with AfterLayoutMixin {
       await Navigator.of(context).pushNamed(PassWordPage.routeName,
           arguments: PassWordPageArguments(method: widget.method));
     } catch (e) {
+      pinput.clear();
       print(e.toString());
     }
   }
@@ -191,7 +193,7 @@ class _OtpPageState extends State<OtpPage> with AfterLayoutMixin {
       body: isLoading == true
           ? Center(
               child: CircularProgressIndicator(
-                color: greentext,
+                color: blue,
               ),
             )
           : Padding(
@@ -239,6 +241,7 @@ class _OtpPageState extends State<OtpPage> with AfterLayoutMixin {
                     keyboardType: TextInputType.number,
                     closeKeyboardWhenCompleted: true,
                     onCompleted: (value) => checkOpt(value),
+                    controller: pinput,
                     // onCompleted: (value) => checkOpt(value),
                     // validator: (value) {
                     //   return value == "${user.otpCode}"

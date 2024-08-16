@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:after_layout/after_layout.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -14,9 +15,11 @@ import 'package:wx_exchange_flutter/main.dart';
 import 'package:wx_exchange_flutter/models/user.dart';
 import 'package:wx_exchange_flutter/provider/user_provider.dart';
 import 'package:wx_exchange_flutter/services/dialog.dart';
+import 'package:wx_exchange_flutter/services/notify_service.dart';
 import 'package:wx_exchange_flutter/src/auth/check-biometric.dart';
 import 'package:wx_exchange_flutter/src/auth/foget_password_page.dart';
 import 'package:wx_exchange_flutter/src/auth/register_page.dart';
+import 'package:wx_exchange_flutter/src/main_page.dart';
 import 'package:wx_exchange_flutter/src/splash_page/splash_page.dart';
 import 'package:wx_exchange_flutter/utils/secure_storage.dart';
 import 'package:wx_exchange_flutter/widget/ui/animated_text_field/animated_textfield.dart';
@@ -51,69 +54,171 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
   bool activeBio = false;
   String bioType = "";
   bool saveIsUsername = false;
-
+  String? errorUserName;
+  String deviceToken = '';
+  bool isLoadingPage = false;
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) async {
-    Future<String?> futureResult = secureStorage.getBioMetric();
-    String result = await futureResult ?? "";
-    if (result == "true") {
-      String? username = await UserProvider().getUsername();
+    Future<String?> usernameStore = secureStorage.getUserName();
+    String resultUsername = await usernameStore ?? "";
+
+    print('=============STORED==========');
+    print(resultUsername);
+    print('=============STORED==========');
+    if (resultUsername != "") {
       setState(() {
-        isBioMetric = true;
-        phoneController.text = username!;
+        phoneController.text = resultUsername;
         saveIsUsername = true;
       });
     }
+    try {
+      setState(() {
+        isLoadingPage = true;
+      });
+      initFireBase();
+      setState(() {
+        isLoadingPage = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoadingPage = false;
+      });
+      print(e.toString());
+    }
+  }
 
-    final bool canAuthenticateWithBiometrics = await auth.canCheckBiometrics;
+  initFireBase() async {
+    deviceToken = await getDeviceToken();
+    print('====CHECKDEVICETOKEN=====');
+    print(deviceToken);
+    print('====CHECKDEVICETOKEN=====');
+  }
 
-    final bool canAuthenticate =
-        canAuthenticateWithBiometrics || await auth.isDeviceSupported();
-
-    setState(() {
-      activeBio = canAuthenticate;
+  Future getDeviceToken() async {
+    FirebaseMessaging.instance.requestPermission();
+    FirebaseMessaging _fireBaseMessage = FirebaseMessaging.instance;
+    String? deviceToken = await _fireBaseMessage.getToken();
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Message data: ${message.data}');
+      if (message.notification != null) {
+        print('ehelsee');
+        NotifyService().showNotification(
+          title: message.notification?.title,
+          body: message.notification?.body,
+        );
+        print('${message.notification?.title}');
+        print('${message.notification?.body}');
+        print('duusasaa');
+      }
     });
+    return (deviceToken == null) ? "" : deviceToken;
+  }
 
-    if (activeBio == true) {
-      final List<BiometricType> availableBiometrics =
-          await auth.getAvailableBiometrics();
-      if (availableBiometrics.contains(BiometricType.face)) {
-        setState(() {
-          bioType = "FACE";
-        });
-      }
-      if (availableBiometrics.contains(BiometricType.fingerprint)) {
-        setState(() {
-          bioType = "FINGER_PRINT";
-        });
-      }
-      if (isBioMetric == false) {
-        String? username = await UserProvider().getUsername();
-        print('============USERNAME========');
-        print(username);
-        print('============USERNAME========');
+  onSubmit() async {
+    final String username;
 
-        if (username == null || username == "") {
-          setState(() {
-            saveIsUsername = false;
-          });
-        } else {
-          setState(() {
-            saveIsUsername = true;
-          });
+    if (fbkey.currentState!.saveAndValidate()) {
+      try {
+        setState(() {
+          isLoading = true;
+        });
+        if (saveIsUsername == true) {
+          username = fbkey.currentState?.fields['username']?.value;
+          _storePhone(username);
         }
+
+        await initFireBase();
+        User save = User.fromJson(fbkey.currentState!.value);
+        save.deviceToken = deviceToken;
+        await Provider.of<UserProvider>(context, listen: false).login(save);
+        UserProvider().setUsername(save.username.toString());
+        await Provider.of<UserProvider>(context, listen: false).me(true);
         setState(() {
-          if (saveIsUsername == true) {
-            phoneController.text = username!;
-            saveIsUsername = true;
-          } else {
-            phoneController.text = '';
-            saveIsUsername = false;
-          }
+          isLoading = false;
         });
+        // await Navigator.of(context).pushNamed(SplashScreen.routeName);
+        await Navigator.of(context).pushNamed(MainPage.routeName,
+            arguments: MainPageArguments(initialIndex: 0));
+      } catch (e) {
+        locator<DialogService>().showErrorDialogListener(
+          "Нэвтрэх нэр эсвэл нууц үг буруу байна.",
+        );
+        setState(() {
+          isLoading = false;
+        });
+        print(e.toString());
       }
     }
   }
+
+  _storePhone(String username) async {
+    await secureStorage.setUserName(username);
+  }
+  // @override
+  // FutureOr<void> afterFirstLayout(BuildContext context) async {
+  //   Future<String?> futureResult = secureStorage.getBioMetric();
+  //   String result = await futureResult ?? "";
+  //   if (result == "true") {
+  //     setState(() {
+  //       isBioMetric = true;
+  //     });
+  //   }
+  //   // ···
+  //   final bool canAuthenticateWithBiometrics = await auth.canCheckBiometrics;
+  //   final bool canAuthenticate =
+  //       canAuthenticateWithBiometrics || await auth.isDeviceSupported();
+  //   setState(() {
+  //     activeBio = canAuthenticate;
+  //   });
+  //   if (activeBio == true && isBioMetric == true) {
+  //     String? username = await UserProvider().getUsername();
+  //     if (username == null || username == "") {
+  //       setState(() {
+  //         saveIsUsername = false;
+  //       });
+  //     } else {
+  //       setState(() {
+  //         saveIsUsername = true;
+  //       });
+  //     }
+  //     setState(() {
+  //       saveIsUsername == true
+  //           ? phoneController.text = username!
+  //           : saveIsUsername = false;
+  //     });
+  //   }
+  //   if (activeBio == true) {
+  //     final List<BiometricType> availableBiometrics =
+  //         await auth.getAvailableBiometrics();
+  //     if (availableBiometrics.contains(BiometricType.face)) {
+  //       setState(() {
+  //         bioType = "FACE";
+  //       });
+  //     } else {}
+  //     if (availableBiometrics.contains(BiometricType.fingerprint)) {
+  //       setState(() {
+  //         bioType = "FINGER_PRINT";
+  //       });
+  //     }
+  //     if (isBioMetric == false) {
+  //       String? username = await UserProvider().getUsername();
+  //       if (username == null || username == "") {
+  //         setState(() {
+  //           saveIsUsername = false;
+  //         });
+  //       } else {
+  //         setState(() {
+  //           saveIsUsername = true;
+  //         });
+  //       }
+  //       setState(() {
+  //         saveIsUsername == true
+  //             ? phoneController.text = username!
+  //             : saveIsUsername = false;
+  //       });
+  //     }
+  //   }
+  // }
 
   @override
   void initState() {
@@ -175,8 +280,10 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
                     FormBuilder(
                       key: fbkey,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           AnimatedTextField(
+                            inputType: TextInputType.text,
                             controller: phoneController,
                             borderColor: blue,
                             colortext: blackAccent,
@@ -187,6 +294,9 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
                               secureStorage.deleteAll();
                               setState(() {
                                 isBioMetric = false;
+                              });
+                              setState(() {
+                                errorUserName = validateReceiverName(value);
                               });
                             },
                             prefixIcon: Row(
@@ -207,7 +317,8 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
                                 )
                               ],
                             ),
-                            labelText: 'Утасны дугаар',
+
+                            labelText: 'И-мэйл',
                             // validator: FormBuilderValidators.compose([
                             //   FormBuilderValidators.required(
                             //       errorText: 'Утасны дугаар оруулна уу.')
@@ -217,9 +328,10 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
                             height: 16,
                           ),
                           AnimatedTextField(
-                            onComplete: () {
-                              _performLogin(context);
-                            },
+                            inputType: TextInputType.text,
+                            // onComplete: () {
+                            //   _performLogin(context);
+                            // },
                             controller: passwordController,
                             borderColor: blue,
                             name: 'password',
@@ -260,6 +372,7 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
                         ],
                       ),
                     ),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -328,8 +441,8 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
                           child: CustomButton(
                             isLoading: isLoading,
                             onClick: () {
-                              // onSubmit();
-                              _performLogin(context);
+                              onSubmit();
+                              // _performLogin(context);
                             },
                             buttonColor: blue,
                             textColor: white,
@@ -365,6 +478,17 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
                       textColor: blue,
                       labelText: 'Бүртгүүлэх',
                     ),
+                    // GestureDetector(
+                    //   onTap: () {
+                    //     NotifyService().showNotification(
+                    //       title: 'Мөнгөн гуйвуулга',
+                    //       body: 'Henlov',
+                    //     );
+                    //   },
+                    //   child: Text(
+                    //     '123',
+                    //   ),
+                    // ),
                     SizedBox(
                       height: 50,
                     )
@@ -458,4 +582,11 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
     await secureStorage.setUserName(phone);
     await secureStorage.setPassWord(password);
   }
+}
+
+String? validateReceiverName(String? value) {
+  if (value == null || value.isEmpty) {
+    return 'Нэр оруулна уу';
+  }
+  return null;
 }

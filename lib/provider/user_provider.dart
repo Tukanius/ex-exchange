@@ -83,4 +83,11 @@ class UserProvider extends ChangeNotifier {
     setAccessToken(user.accessToken);
     return user;
   }
+
+  auth() async {
+    String? token = await getAccessToken();
+    if (token != null) {
+      await clearAccessToken();
+    }
+  }
 }

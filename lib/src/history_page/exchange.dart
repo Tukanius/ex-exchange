@@ -300,7 +300,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                               ),
                             ),
                             TextSpan(
-                              text: '${widget.data.bankCardNo}',
+                              // text: '${widget.data.bankCardNo}',
+                              text: '123',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 16,

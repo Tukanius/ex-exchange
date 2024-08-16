@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:wx_exchange_flutter/widget/ui/animated_text_field/custom_animate.dart';
+// import 'package:wx_exchange_flutter/widget/ui/animated_text_field/custom_animate.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
 
 class AnimatedTextField extends StatefulWidget {
@@ -88,115 +88,121 @@ class AnimatedTextField extends StatefulWidget {
 
 class _AnimatedTextFieldState extends State<AnimatedTextField>
     with SingleTickerProviderStateMixin {
-  bool isFocused = false;
+  // bool isFocused = false;
   bool isPasswordVisible = false;
-  late Animation<double> alpha;
-  late AnimationController controller;
-  @override
-  void initState() {
-    isPasswordVisible = widget.hasObscureControl;
-    controller = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 400),
-    );
-    final Animation<double> curve =
-        CurvedAnimation(parent: controller, curve: Curves.easeInOut);
-    alpha = Tween(begin: 0.0, end: 1.0).animate(curve);
+  // late Animation<double> alpha;
+  // late AnimationController controller;
+  // @override
+  // void initState() {
+  //   isPasswordVisible = widget.hasObscureControl;
+  //   controller = AnimationController(
+  //     vsync: this,
+  //     duration: Duration(milliseconds: 400),
+  //   );
+  //   final Animation<double> curve =
+  //       CurvedAnimation(parent: controller, curve: Curves.easeInOut);
+  //   alpha = Tween(begin: 0.0, end: 1.0).animate(curve);
 
-    controller.addListener(() {
-      setState(() {});
-    });
-    widget.focusNode.addListener(() {
-      if (widget.focusNode.hasFocus) {
-        controller.forward();
-      } else {
-        controller.reverse();
-      }
-    });
-    super.initState();
-  }
+  //   controller.addListener(() {
+  //     setState(() {});
+  //   });
+  //   widget.focusNode.addListener(() {
+  //     if (widget.focusNode.hasFocus) {
+  //       controller.forward();
+  //     } else {
+  //       controller.reverse();
+  //     }
+  //   });
+  //   super.initState();
+  // }
 
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   controller.dispose();
+  //   super.dispose();
+  // }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: borderColor),
-        borderRadius: BorderRadius.all(
-          Radius.circular(12),
-        ),
+    return FormBuilderTextField(
+      buildCounter: widget.showCounter
+          ? null
+          : (context, {int? currentLength, bool? isFocused, int? maxLength}) =>
+              null,
+      controller: widget.controller,
+      autofocus: widget.autoFocus,
+      maxLines: widget.maxLines,
+      keyboardType: widget.inputType,
+      textInputAction: widget.inputAction,
+      initialValue: widget.initialValue,
+      obscureText:
+          widget.hasObscureControl ? isPasswordVisible : widget.obscureText,
+      readOnly: widget.readOnly,
+      validator: widget.validator,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      autocorrect: false,
+      textCapitalization: widget.textCapitalization,
+      inputFormatters: widget.inputFormatters,
+      maxLength: widget.maxLenght,
+      onChanged: widget.onChanged,
+      name: widget.name,
+      focusNode: widget.focusNode,
+      onEditingComplete: () {
+        if (widget.nextFocusNode != null) {
+          widget.nextFocusNode!.requestFocus();
+        } else {
+          FocusScope.of(context).unfocus();
+        }
+      },
+      onSubmitted: (value) {
+        if (widget.onComplete is Function) {
+          widget.onComplete!();
+        }
+      },
+      textAlign: widget.textAlign != null ? widget.textAlign! : TextAlign.start,
+      style: TextStyle(
+        color: widget.colortext,
+        fontSize: widget.fontSize,
+        fontWeight: widget.fontWeight,
       ),
-      child: CustomPaint(
-        painter: CustomAnimateBorder(alpha.value, widget.borderColor),
-        child: FormBuilderTextField(
-          buildCounter: widget.showCounter
-              ? null
-              : (context,
-                      {int? currentLength, bool? isFocused, int? maxLength}) =>
-                  null,
-          controller: widget.controller,
-          autofocus: widget.autoFocus,
-          maxLines: widget.maxLines,
-          keyboardType: widget.inputType,
-          textInputAction: widget.inputAction,
-          initialValue: widget.initialValue,
-          obscureText:
-              widget.hasObscureControl ? isPasswordVisible : widget.obscureText,
-          readOnly: widget.readOnly,
-          validator: widget.validator,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          autocorrect: false,
-          textCapitalization: widget.textCapitalization,
-          inputFormatters: widget.inputFormatters,
-          maxLength: widget.maxLenght,
-          onChanged: widget.onChanged,
-          name: widget.name,
-          focusNode: widget.focusNode,
-          onEditingComplete: () {
-            if (widget.nextFocusNode != null) {
-              widget.nextFocusNode!.requestFocus();
-            } else {
-              FocusScope.of(context).unfocus();
-            }
-          },
-          onSubmitted: (value) {
-            if (widget.onComplete is Function) {
-              widget.onComplete!();
-            }
-          },
-          textAlign:
-              widget.textAlign != null ? widget.textAlign! : TextAlign.start,
-          style: TextStyle(
-            color: widget.colortext,
-            fontSize: widget.fontSize,
-            fontWeight: widget.fontWeight,
-          ),
-          decoration: InputDecoration(
-            hintText: widget.hintText,
-            hintStyle: TextStyle(
-              color: widget.hintTextColor ?? colortext,
-              fontSize: 14,
-            ),
-            floatingLabelBehavior:
-                widget.floatLabel ?? FloatingLabelBehavior.auto,
-            labelText: widget.labelText,
-            labelStyle: TextStyle(color: hintText),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: widget.verticalPadding ?? 12,
-            ),
-            fillColor: widget.fillColor,
-            suffixIcon: widget.suffixIcon,
-            prefixIcon: widget.prefixIcon,
-          ),
+      decoration: InputDecoration(
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: cancel),
         ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: cancel),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: blue),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: blue),
+        ),
+        hintText: widget.hintText,
+        hintStyle: TextStyle(
+          color: widget.hintTextColor ?? colortext,
+          fontSize: 14,
+        ),
+        floatingLabelBehavior: widget.floatLabel ?? FloatingLabelBehavior.auto,
+        labelText: widget.labelText,
+        labelStyle: TextStyle(color: hintText),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: widget.verticalPadding ?? 12,
+        ),
+        fillColor: widget.fillColor,
+        suffixIcon: widget.suffixIcon,
+        prefixIcon: widget.prefixIcon,
       ),
     );
   }
 }
+        // painter: CustomAnimateBorder(alpha.value, widget.borderColor, 12),

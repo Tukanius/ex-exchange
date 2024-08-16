@@ -12,14 +12,14 @@ class Exchange {
   num? rate;
   String? sign;
   String? bankName;
-  String? name;
-  String? bankCardNo;
-  String? phone;
+  String? accountName;
+  String? accountNumber;
+  // String? phone;
   bool? contract;
   String? purpose;
-  String? nameEng;
-  String? idCardNo;
-  String? cityName;
+  String? swiftCode;
+  String? branchName;
+  String? branchAddress;
 
   Exchange({
     this.type,
@@ -33,14 +33,14 @@ class Exchange {
     this.sign,
     this.rate,
     this.bankName,
-    this.name,
-    this.bankCardNo,
-    this.phone,
+    this.accountName,
+    this.accountNumber,
+    // this.phone,
     this.contract,
     this.purpose,
-    this.nameEng,
-    this.idCardNo,
-    this.cityName,
+    this.swiftCode,
+    this.branchName,
+    this.branchAddress,
   });
   static $fromJson(Map<String, dynamic> json) => _$ExchangeFromJson(json);
 

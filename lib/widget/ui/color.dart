@@ -27,6 +27,7 @@ const Color success = Color(0xff2DA64F);
 const Color red = Color(0xffC96262);
 const Color redError = Color(0xffC72929);
 const Color cancel = Color(0xffFF0028);
+const Color delete = Color(0xffFF3B30);
 
 const Color greentext = Color(0xff6BC962);
 Color bottomnavcolor = Color(0xff0D0D0D).withOpacity(0.5);

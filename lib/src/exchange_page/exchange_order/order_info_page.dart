@@ -47,16 +47,16 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
       });
       data.type = "EXCHANGE";
       data.fromCurrency = "MNT";
-      data.fromAmount = num.parse(tools.mnt);
+      data.fromAmount = tools.mnt;
       data.toCurrency = "CNY";
       data.toAmount = num.parse(tools.toAmount);
       data.rate = num.parse(tools.toValue);
-      data.fee = num.parse(tools.fee);
+      data.fee = tools.fee;
       data.bankName = tools.bank;
-      data.name = tools.receiver;
-      data.bankCardNo = tools.bankid;
+      // data.name = tools.receiver;
+      // data.bankCardNo = tools.bankid;
       data.sign = base64Encode(widget.signature);
-      data.phone = tools.phone;
+      // data.phone = tools.phone;
       data.contract = true;
 
       // data.purpose = 'FOOD';

@@ -16,15 +16,17 @@ class TradeHistory {
   String? sign;
   String? name;
   String? bankName;
-  String? bankCardNo;
+  String? accountNumber;
   String? phone;
   String? tradeStatus;
   String? createdAt;
   String? updatedAt;
   String? description;
   String? purpose;
-  String? idCardNo;
-  String? cityName;
+  String? swiftCode;
+  String? branchName;
+  String? branchAddress;
+  String? accountName;
 
   TradeHistory({
     this.id,
@@ -42,15 +44,17 @@ class TradeHistory {
     this.sign,
     this.name,
     this.bankName,
-    this.bankCardNo,
+    this.accountNumber,
     this.phone,
     this.tradeStatus,
     this.createdAt,
     this.updatedAt,
     this.description,
     this.purpose,
-    this.idCardNo,
-    this.cityName,
+    this.swiftCode,
+    this.branchName,
+    this.branchAddress,
+    this.accountName,
   });
   static $fromJson(Map<String, dynamic> json) => _$TradeHistoryFromJson(json);
 
