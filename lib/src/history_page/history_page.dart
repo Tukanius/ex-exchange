@@ -55,7 +55,7 @@ class _HistoryPageState extends State<HistoryPage> with AfterLayoutMixin {
     });
     if (currentIndex == 0) await listHistory(page, limit, '');
     if (currentIndex == 1) await listHistory(page, limit, 'PENDING');
-    if (currentIndex == 2) await listHistory(page, limit, 'SUCCESS');
+    if (currentIndex == 2) await listHistory(page, limit, 'PAID');
     if (currentIndex == 3) await listHistory(page, limit, 'CANCELED');
     setState(() {
       isLoading = false;
@@ -70,7 +70,7 @@ class _HistoryPageState extends State<HistoryPage> with AfterLayoutMixin {
     });
     if (currentIndex == 0) await listHistory(page, limit, '');
     if (currentIndex == 1) await listHistory(page, limit, 'PENDING');
-    if (currentIndex == 2) await listHistory(page, limit, 'SUCCESS');
+    if (currentIndex == 2) await listHistory(page, limit, 'PAID');
     if (currentIndex == 3) await listHistory(page, limit, 'CANCELED');
     refreshController.refreshCompleted();
   }
@@ -81,7 +81,7 @@ class _HistoryPageState extends State<HistoryPage> with AfterLayoutMixin {
     });
     if (currentIndex == 0) await listHistory(page, limit, '');
     if (currentIndex == 1) await listHistory(page, limit, 'PENDING');
-    if (currentIndex == 2) await listHistory(page, limit, 'SUCCESS');
+    if (currentIndex == 2) await listHistory(page, limit, 'PAID');
     if (currentIndex == 3) await listHistory(page, limit, 'CANCELED');
     refreshController.loadComplete();
   }
@@ -210,7 +210,7 @@ class _HistoryPageState extends State<HistoryPage> with AfterLayoutMixin {
                                 vertical: 13,
                               ),
                               child: Text(
-                                'Амжилттай',
+                                'Төлөгдсөн',
                                 style: TextStyle(
                                   color: currentIndex == 2 ? blue : dark,
                                   fontSize: 14,

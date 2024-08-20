@@ -110,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
         await Navigator.of(context).pushNamed(
           OtpPage.routeName,
           arguments:
-              OtpPageArguments(method: "REGISTER", username: save.phone!),
+              OtpPageArguments(method: "REGISTER", username: save.email!),
         );
       } catch (e) {
         setState(() {
@@ -189,7 +189,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       AnimatedTextField(
                         borderColor: blue,
                         colortext: blackAccent,
-                        name: 'firstName',
+                        name: 'lastName',
                         focusNode: firstname,
                         labelText: 'Овог',
                         controller: firstnameController,
@@ -221,7 +221,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       AnimatedTextField(
                         borderColor: blue,
                         colortext: blackAccent,
-                        name: 'lastName',
+                        name: 'firstName',
                         focusNode: lastname,
                         labelText: 'Нэр',
                         controller: lastnameController,

@@ -28,9 +28,9 @@ import 'package:wx_exchange_flutter/src/exchange_page/signature/signature_page.d
 import 'package:wx_exchange_flutter/src/history_page/transfer_detail.dart';
 import 'package:wx_exchange_flutter/utils/currency_formatter.dart';
 import 'package:wx_exchange_flutter/utils/utils.dart';
-// import 'package:wx_exchange_flutter/utils/utils.dart';
 import 'package:wx_exchange_flutter/widget/ui/animated_text_field/animated_textfield.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
+// import 'package:wx_exchange_flutter/utils/utils.dart';
 
 class TransferPage extends StatefulWidget {
   const TransferPage({super.key});

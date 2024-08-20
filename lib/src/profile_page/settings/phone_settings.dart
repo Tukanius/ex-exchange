@@ -59,24 +59,24 @@ class _PhoneSettingsPageState extends State<PhoneSettingsPage> {
             fontWeight: FontWeight.w500,
           ),
         ),
-        actions: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pop();
-                },
-                child: Icon(
-                  Icons.check,
-                  color: dark,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(
-            width: 12,
-          ),
-        ],
+        // actions: [
+        //   Row(
+        //     children: [
+        //       GestureDetector(
+        //         onTap: () {
+        //           Navigator.of(context).pop();
+        //         },
+        //         child: Icon(
+        //           Icons.check,
+        //           color: dark,
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        //   SizedBox(
+        //     width: 12,
+        //   ),
+        // ],
       ),
       backgroundColor: white,
       body: Padding(

@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_svg/svg.dart';
@@ -7,6 +8,7 @@ import 'package:wx_exchange_flutter/components/back_arrow/back_arrow.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/models/user.dart';
 import 'package:wx_exchange_flutter/provider/user_provider.dart';
+import 'package:wx_exchange_flutter/services/notify_service.dart';
 import 'package:wx_exchange_flutter/src/auth/login_page.dart';
 import 'package:wx_exchange_flutter/src/splash_page/splash_page.dart';
 import 'package:wx_exchange_flutter/widget/ui/animated_text_field/animated_textfield.dart';
@@ -65,8 +67,9 @@ class _PassWordPageState extends State<PassWordPage> {
         setState(() {
           isLoading = true;
         });
-
+        await initFireBase();
         User save = User.fromJson(fbkey.currentState!.value);
+        save.deviceToken = deviceToken;
         await Provider.of<UserProvider>(context, listen: false)
             .setPassword(save);
 
@@ -81,6 +84,35 @@ class _PassWordPageState extends State<PassWordPage> {
         });
       }
     }
+  }
+
+  String deviceToken = '';
+
+  initFireBase() async {
+    deviceToken = await getDeviceToken();
+    print('====CHECKDEVICETOKEN=====');
+    print(deviceToken);
+    print('====CHECKDEVICETOKEN=====');
+  }
+
+  Future getDeviceToken() async {
+    FirebaseMessaging.instance.requestPermission();
+    FirebaseMessaging _fireBaseMessage = FirebaseMessaging.instance;
+    String? deviceToken = await _fireBaseMessage.getToken();
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Message data: ${message.data}');
+      if (message.notification != null) {
+        print('ehelsee');
+        NotifyService().showNotification(
+          title: message.notification?.title,
+          body: message.notification?.body,
+        );
+        print('${message.notification?.title}');
+        print('${message.notification?.body}');
+        print('duusasaa');
+      }
+    });
+    return (deviceToken == null) ? "" : deviceToken;
   }
 
   // showSuccess(ctx) async {
