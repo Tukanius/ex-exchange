@@ -239,8 +239,8 @@ class _ReceiverSettingsPageState extends State<ReceiverSettingsPage>
     TextEditingController receiverNameController = TextEditingController();
     TextEditingController bankIdController = TextEditingController();
     TextEditingController accountNameController = TextEditingController();
-    // receiverNameController.text = data.name!;
-    // bankIdController.text = data.bankCardNo!;
+    receiverNameController.text = data.accountName!;
+    bankIdController.text = data.accountNumber!;
     accountNameController.text = data.phone!;
     dropBankName = data.bankName!;
 
@@ -478,9 +478,9 @@ class _ReceiverSettingsPageState extends State<ReceiverSettingsPage>
                               dropBankName != null &&
                               bankIdController.text != "" &&
                               accountNameController.text != "") {
-                            // info.name = receiverNameController.text;
+                            info.accountName = receiverNameController.text;
                             info.bankName = dropBankName;
-                            // info.bankCardNo = bankIdController.text;
+                            info.accountNumber = bankIdController.text;
                             info.phone = accountNameController.text;
                             var res =
                                 await UserApi().updateReceiver(info, data.id!);

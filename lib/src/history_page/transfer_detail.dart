@@ -67,9 +67,7 @@ class _TransferDetailPageState extends State<TransferDetailPage>
       payData = await ExchangeApi().getPay(widget.data.id!);
       Navigator.of(context).pushNamed(
         PaymentDetailPage.routeName,
-        arguments: PaymentDetailPageArguments(
-          data: payData,
-        ),
+        arguments: PaymentDetailPageArguments(data: payData, type: "TRANSFER"),
       );
     } catch (e) {
       print(e.toString());

@@ -1,6 +1,8 @@
+import 'package:wx_exchange_flutter/models/contract.dart';
 import 'package:wx_exchange_flutter/models/notify.dart';
 import 'package:wx_exchange_flutter/models/receiver.dart';
 import 'package:wx_exchange_flutter/models/result.dart';
+import 'package:wx_exchange_flutter/models/user.dart';
 import 'package:wx_exchange_flutter/utils/http_request.dart';
 
 class UserApi extends HttpRequest {
@@ -32,6 +34,16 @@ class UserApi extends HttpRequest {
 
   seenNot(String id) async {
     var res = await get('/notification/$id', handler: false);
+    return res;
+  }
+
+  getContract() async {
+    var res = await get('/condition', handler: false);
+    return Contract.fromJson(res as Map<String, dynamic>);
+  }
+
+  accountDelete(User data) async {
+    var res = await put('/user/del', handler: false, data: data.toJson());
     return res;
   }
 }

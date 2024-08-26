@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wx_exchange_flutter/api/auth_api.dart';
+import 'package:wx_exchange_flutter/api/user_api.dart';
 import 'package:wx_exchange_flutter/models/user.dart';
 
 class UserProvider extends ChangeNotifier {
@@ -78,6 +79,11 @@ class UserProvider extends ChangeNotifier {
     return user;
   }
 
+  updatePassword(User data) async {
+    user = await AuthApi().updatePassword(data);
+    notifyListeners();
+  }
+
   register(User data) async {
     user = await AuthApi().register(data);
     setAccessToken(user.accessToken);
@@ -89,5 +95,10 @@ class UserProvider extends ChangeNotifier {
     if (token != null) {
       await clearAccessToken();
     }
+  }
+
+  deleteAccount(User data) async {
+    var res = await UserApi().accountDelete(data);
+    return res;
   }
 }

@@ -6,6 +6,7 @@ import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:lottie/lottie.dart';
@@ -17,8 +18,10 @@ import 'package:wx_exchange_flutter/api/user_api.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/components/history_button/history_button.dart';
 import 'package:wx_exchange_flutter/components/loader/loader.dart';
+import 'package:wx_exchange_flutter/models/contract.dart';
 import 'package:wx_exchange_flutter/models/exchange.dart';
 import 'package:wx_exchange_flutter/models/general.dart';
+import 'package:wx_exchange_flutter/models/jpy_currency.dart';
 import 'package:wx_exchange_flutter/models/receiver.dart';
 import 'package:wx_exchange_flutter/models/result.dart';
 import 'package:wx_exchange_flutter/models/user.dart';
@@ -26,6 +29,7 @@ import 'package:wx_exchange_flutter/provider/exchange_provider.dart';
 import 'package:wx_exchange_flutter/provider/general_provider.dart';
 import 'package:wx_exchange_flutter/src/exchange_page/signature/signature_page.dart';
 import 'package:wx_exchange_flutter/src/history_page/exchange.dart';
+import 'package:wx_exchange_flutter/utils/currency_formatter.dart';
 import 'package:wx_exchange_flutter/utils/utils.dart';
 import 'package:wx_exchange_flutter/widget/ui/animated_text_field/animated_textfield.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
@@ -48,16 +52,16 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
   String? dropBankName;
   bool isLoading = true;
   bool isLoadingHistory = true;
+  bool isLoadingData = true;
   Timer? timer;
   String convertedValue = '0';
   Exchange dataReceive = Exchange();
   int page = 1;
   int limit = 10;
   int pageHistory = 1;
-  int limitHistory = 10;
+  int limitHistory = 15;
   Result result = Result();
   Result resultHistory = Result();
-
   TextEditingController mntController = TextEditingController();
   TextEditingController jpnController = TextEditingController();
   RefreshController refreshController =
@@ -67,6 +71,36 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
   User user = User();
   General general = General();
   bool tradeSubmit = false;
+  Contract contract = Contract();
+  String html = '''''';
+  JpyCurrency currency = JpyCurrency();
+
+  @override
+  void initState() {
+    super.initState();
+    receiverNameFocusNode.addListener(_onFocusChange);
+    bankIdFocus.addListener(_onFocusChange);
+    receiverPhoneFocus.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    receiverNameFocusNode.removeListener(_onFocusChange);
+    bankIdFocus.removeListener(_onFocusChange);
+    receiverPhoneFocus.removeListener(_onFocusChange);
+
+    receiverNameFocusNode.dispose();
+    bankIdFocus.dispose();
+    receiverPhoneFocus.dispose();
+    super.dispose();
+  }
 
   @override
   afterFirstLayout(BuildContext context) async {
@@ -75,12 +109,25 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
     try {
       await list(page, limit);
       await listHistory(page, limit);
+      contract = await UserApi().getContract();
+      currency.type = 'EXCHANGE';
+      currency.currency = 'JPY';
+      currency = await ExchangeApi().getRate(currency);
+      print('=============get===========');
+      print(currency.get);
+      print('=============get===========');
+
+      html = '''${contract.description}''';
+      setState(() {
+        isLoadingData = false;
+      });
     } catch (e) {
       print(e.toString());
       if (mounted) {
         setState(() {
           isLoading = false;
           isLoadingHistory = false;
+          isLoadingData = false;
         });
       }
     }
@@ -126,15 +173,24 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
     });
   }
 
-  onChange(String query) async {
-    if (query != '') {
-      print('======QUERY======');
-      print(query);
-      print('======QUERY======');
+  bool isValueErrorLimit = false;
 
+  onChange(String query) async {
+    print('=======query======');
+    final cleanValue = query.replaceAll(',', '');
+    print(cleanValue);
+    print('=======query======');
+
+    if (cleanValue != '') {
       setState(() {
-        isValueError = num.parse(query) < 33000;
+        isEmpty = false;
+        if (num.parse(cleanValue) == currency.minLimit) isValueError = false;
+        if (num.parse(cleanValue) == currency.maxLimit)
+          isValueErrorLimit = false;
+        isValueError = num.parse(cleanValue) < currency.minLimit!;
+        isValueErrorLimit = num.parse(cleanValue) >= currency.maxLimit!;
         print(isValueError);
+        print(isValueErrorLimit);
       });
       Exchange data = Exchange();
       if (timer != null) timer!.cancel();
@@ -147,23 +203,25 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
           data.type = "EXCHANGE";
           data.fromCurrency = "MNT";
           data.toCurrency = "JPY";
-          data.fromAmount = num.parse(query);
-          num.parse(query) >= 33000
+          data.fromAmount = num.parse(cleanValue);
+          num.parse(cleanValue) >= currency.minLimit!
               ? dataReceive = await ExchangeApi().tradeConvertor(data)
               : SizedBox();
           if (!mounted) return;
           setState(() {
-            jpnController.text = dataReceive.toAmount?.toString() ?? '0';
+            jpnController.text =
+                Utils().formatTextCustom(dataReceive.toAmount ?? 0);
           });
           setState(() {
             tradeSubmit = false;
           });
         } catch (e) {
-          // end bur yg utga ni solih bolomjgui bol ym gargaj irh ystoi bha ahhah
           print(e.toString());
           if (mounted) {
             setState(() {
               jpnController.text = '0';
+              dataReceive.fee = 0;
+              dataReceive.toValue = 0;
             });
             setState(() {
               tradeSubmit = false;
@@ -174,6 +232,38 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
     }
   }
 
+  String getBankName(String code) {
+    switch (code) {
+      case 'KHANBANK':
+        return 'Хаан банк';
+      case 'GOLOMTBANK':
+        return 'Голомт банк';
+      case 'TDBANK':
+        return 'Худалдаа хөгжлийн банк';
+      case 'KHASBANK':
+        return 'Хас банк';
+      case 'CREDITBANK':
+        return 'Кредит банк';
+      case 'STATEBANK':
+        return 'Төрийн банк';
+      case 'ARIGBANK':
+        return 'Ариг банк';
+      case 'CAPITRONBANK':
+        return 'Капитрон банк';
+      case 'MBANK':
+        return 'М банк';
+      case 'BOGDBANK':
+        return 'Богд банк';
+      case 'TRANSDEVBANK':
+        return 'Тээвэр хөгжлийн банк';
+      case 'NIBANK':
+        return 'Үндэсний хөрөнгө оруулалтын банк';
+      case 'CHINGISKHANBANK':
+        return 'Чингис хаан банк';
+      default:
+        return 'Хаан банк';
+    }
+  }
 // on FormatException {
 //         print('Error: Invalid format for number parsing');
 //         if (mounted) {
@@ -185,30 +275,35 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
 //           });
 //         }
 //       }
-  @override
-  void dispose() {
-    timer?.cancel();
-    super.dispose();
-  }
 
   bool isValueError = false;
   bool isSetUser = true;
   bool purposeTrade = true;
+  bool isEmpty = false;
 
   verify() async {
     if (user.userStatus == "NEW") {
       danVerify(context);
     } else {
-      print(num.parse(mntController.text));
-      if (isValueError == false) {
+      print('===========focus==========');
+      print(mntController.text);
+      print('===========focus==========');
+
+      if (mntController.text == "") {
         setState(() {
-          mntController.text.length > 4 &&
-                  num.parse(mntController.text) >= 33000
-              ? isValueError = false
-              : isValueError = true;
-          print(isValueError);
+          isEmpty = true;
         });
       }
+      // if (isValueError == false) {
+      //   setState(() {
+      //     print(mntController.text);
+      //     var res = mntController.text.replaceAll(',', '');
+      //     num.parse(res) >= general.minMax!.min!
+      //         ? isValueError = false
+      //         : isValueError = true;
+      //     print(isValueError);
+      //   });
+      // }
 
       if (isSetUser == true) {
         if (receiverBox == '') {
@@ -237,7 +332,11 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
       print(isSetUser);
       print(purposeTrade);
 
-      if (isValueError == false && isSetUser == true && purposeTrade == true) {
+      if (isValueError == false &&
+          isValueErrorLimit == false &&
+          isSetUser == true &&
+          purposeTrade == true &&
+          isEmpty == false) {
         confirm(context, info);
       } else {
         print("error");
@@ -250,6 +349,14 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
       receiverBox = name;
     });
   }
+
+  void updateBankName(String name) {
+    setState(() {
+      updatedBankName = name;
+    });
+  }
+
+  String updatedBankName = '';
 
   void updatePurposePayment(String name) {
     setState(() {
@@ -322,7 +429,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                   onChanged: (query) {
                                     onChange(query);
                                   },
-                                  labelText: 'Төгрөг  / лимит: 25,000,000 /',
+                                  labelText: 'Төгрөг',
                                   name: 'mnt',
                                   focusNode: mnt,
                                   borderColor: isValueError ? redError : blue,
@@ -330,10 +437,6 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                   hintText: '₮0',
                                   hintTextColor: hintColor,
                                   inputType: TextInputType.number,
-                                  inputFormatters: <TextInputFormatter>[
-                                    FilteringTextInputFormatter.allow(
-                                        RegExp(r'[0-9]')),
-                                  ],
                                   controller: mntController,
                                   prefixIcon: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -347,6 +450,10 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                       ),
                                     ],
                                   ),
+                                  inputFormatters: <TextInputFormatter>[
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    ThousandsSeparatorFormatter(),
+                                  ],
                                 ),
                               ),
                               isValueError == true
@@ -357,7 +464,41 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                         top: 4,
                                       ),
                                       child: Text(
-                                        'Арилжих хамгийн бага утга ₮ 33.000.00.',
+                                        'Арилжих хамгийн бага утга ₮ ${Utils().formatTextCustom(currency.minLimit)}.',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: redError,
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox(),
+                              isValueErrorLimit == true
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 32,
+                                        right: 16,
+                                        top: 4,
+                                      ),
+                                      child: Text(
+                                        'Арилжих дүнгийн лимит хэтэрсэн',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: redError,
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox(),
+                              isEmpty == true
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 32,
+                                        right: 16,
+                                        top: 4,
+                                      ),
+                                      child: Text(
+                                        'Арилжих дүн оруулна уу.',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
@@ -433,7 +574,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                 child: AnimatedTextField(
                                   floatLabel: FloatingLabelBehavior.always,
                                   readOnly: true,
-                                  labelText: 'Иен  / лимит: 5,000,000 /',
+                                  labelText: 'Иен',
                                   name: 'yen',
                                   focusNode: yen,
                                   borderColor: blue,
@@ -531,7 +672,9 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                           height: 16,
                         ),
                         Text(
-                          '1 JPY = ${dataReceive.toValue ?? 0} MNT',
+                          isLoadingData == true
+                              ? '1 JPY = 0 MNT'
+                              : '1 JPY = ${currency.get} MNT',
                           style: TextStyle(
                               color: dark,
                               fontSize: 14,
@@ -541,7 +684,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                           height: 8,
                         ),
                         Text(
-                          'Шимтгэл: ₮ ${dataReceive.fee ?? 0}',
+                          'Шимтгэл: ¥ ${Utils().formatTextCustom(dataReceive.fee ?? 0)}',
                           style: TextStyle(
                               color: dark,
                               fontSize: 14,
@@ -899,13 +1042,14 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
     );
   }
 
+  FocusNode receiverNameFocusNode = FocusNode();
+  FocusNode bankIdFocus = FocusNode();
+  FocusNode receiverPhoneFocus = FocusNode();
+  TextEditingController receiverNameController = TextEditingController();
+  TextEditingController bankIdController = TextEditingController();
+  TextEditingController receiverPhoneController = TextEditingController();
+
   addReceiver(BuildContext context, General general) {
-    FocusNode receiverNameFocusNode = FocusNode();
-    FocusNode bankIdFocus = FocusNode();
-    FocusNode receiverPhoneFocus = FocusNode();
-    TextEditingController receiverNameController = TextEditingController();
-    TextEditingController bankIdController = TextEditingController();
-    TextEditingController receiverPhoneController = TextEditingController();
     int selectedContainerIndex = -1;
 
     Widget buildContainer(data, int index) {
@@ -930,9 +1074,13 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SvgPicture.asset(
-                  'assets/svg/check.svg',
-                ),
+                selectedContainerIndex == index
+                    ? SvgPicture.asset(
+                        'assets/svg/check.svg',
+                      )
+                    : SvgPicture.asset(
+                        'assets/svg/uncheck.svg',
+                      ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -948,7 +1096,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                         ),
                       ),
                       Text(
-                        '${data.name}',
+                        '${data.accountName}',
                         style: TextStyle(
                           color: dark,
                           fontSize: 14,
@@ -979,28 +1127,6 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
       backgroundColor: white,
       builder: (BuildContext context) => StatefulBuilder(
         builder: (context, setState) {
-          receiverNameFocusNode.addListener(() {
-            if (receiverNameFocusNode.hasFocus) {
-              setState(() {});
-            } else {
-              setState(() {});
-            }
-          });
-          bankIdFocus.addListener(() {
-            if (bankIdFocus.hasFocus) {
-              setState(() {});
-            } else {
-              setState(() {});
-            }
-          });
-          receiverPhoneFocus.addListener(() {
-            if (receiverPhoneFocus.hasFocus) {
-              setState(() {});
-            } else {
-              setState(() {});
-            }
-          });
-
           return Container(
             width: MediaQuery.of(context).size.width,
             child: Container(
@@ -1045,17 +1171,41 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                       key: ValueKey(index),
                                       onTap: () {
                                         setState(() {
-                                          selectedContainerIndex = index;
+                                          // Toggle selection
+                                          if (selectedContainerIndex == index) {
+                                            selectedContainerIndex = -1;
+                                            receiverNameController.clear();
+                                            receiverPhoneController.clear();
+                                            bankIdController.clear();
+                                            setState(() {
+                                              dropBankName = null;
+                                            });
+                                          } else {
+                                            selectedContainerIndex = index;
+                                            receiverPhoneController.text =
+                                                data.phone;
+                                            bankIdController.text =
+                                                data.accountNumber;
+                                            receiverNameController.text =
+                                                data.accountName;
+                                            setState(() {
+                                              dropBankName = data.bankName;
+                                              updatedBankName =
+                                                  getBankName(data.bankName);
+                                            });
+                                          }
                                         });
-                                        receiverNameController.text = data.name;
-                                        bankIdController.text = data.bankCardNo;
-                                        receiverPhoneController.text =
-                                            data.phone;
-                                        setState(() {
-                                          dropBankName = data.bankName;
-                                        });
+                                        // setState(() {
+                                        //   selectedContainerIndex = index;
+                                        // });
+                                        // receiverNameController.text =
+                                        //     data.accountName;
+                                        // bankIdController.text =
+                                        //     data.accountNumber;
+                                        // receiverPhoneController.text =
+                                        //     data.phone;
 
-                                        print(dropBankName);
+                                        // print(dropBankName);
                                       },
                                       child: buildContainer(data, index),
                                     );
@@ -1074,7 +1224,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                             inputType: TextInputType.text,
                             controller: receiverNameController,
                             labelText: 'Хүлээн авагчийн овог, нэр',
-                            name: 'receiver',
+                            name: 'accountName',
                             focusNode: receiverNameFocusNode,
                             borderColor: blue,
                             colortext: dark,
@@ -1091,7 +1241,8 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                 : null,
                             validator: FormBuilderValidators.compose([
                               (value) {
-                                return validateName(value.toString());
+                                return isValidCryllic(
+                                    value.toString(), context);
                               }
                             ]),
                           ),
@@ -1105,6 +1256,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                             onChanged: (value) {
                               setState(() {
                                 dropBankName = value;
+                                updatedBankName = getBankName(value!);
                               });
                             },
                             dropdownColor: white,
@@ -1149,7 +1301,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                   (data) => DropdownMenuItem(
                                     value: data.code,
                                     child: Text(
-                                      '${data.code}',
+                                      '${data.name}',
                                       style: TextStyle(
                                         color: dark,
                                         fontSize: 14,
@@ -1169,7 +1321,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                           AnimatedTextField(
                             controller: bankIdController,
                             labelText: 'Дансны дугаар',
-                            name: 'cityName',
+                            name: 'accountNumber',
                             focusNode: bankIdFocus,
                             borderColor: blue,
                             colortext: dark,
@@ -1199,7 +1351,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                           AnimatedTextField(
                             controller: receiverPhoneController,
                             labelText: 'Харилцах утас',
-                            name: 'idNumber',
+                            name: 'phone',
                             focusNode: receiverPhoneFocus,
                             borderColor: blue,
                             colortext: dark,
@@ -1240,15 +1392,16 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                               isSetUser = true;
                             });
                             updateReceiverBox(receiverNameController.text);
-                            // info.name = receiverNameController.text;
+                            info.accountName = receiverNameController.text;
                             info.bankName = dropBankName;
-                            // info.bankCardNo = bankIdController.text;
+                            info.accountNumber = bankIdController.text;
                             info.phone = receiverPhoneController.text;
+
                             setState(() {
                               dropBankName = null;
                             });
-                            FocusScope.of(context).unfocus();
                             Navigator.of(context).pop();
+                            FocusScope.of(context).unfocus();
                           }
                         }
                       },
@@ -1257,7 +1410,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                       labelText: 'Болсон',
                       textColor: white,
                     ),
-                    SizedBox(height: 100),
+                    SizedBox(height: 50),
                   ],
                 ),
               ),
@@ -1406,8 +1559,8 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                   setState(() {
                                     purposeTrade = true;
                                   });
-                                  FocusScope.of(context).unfocus();
                                   Navigator.of(context).pop();
+                                  FocusScope.of(context).unfocus();
                                 },
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1458,8 +1611,8 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
       builder: (BuildContext context) => StatefulBuilder(
         builder: (context, setState) {
           final tools = Provider.of<ExchangeProvider>(context, listen: false);
+
           return Container(
-            height: MediaQuery.of(context).size.height * 0.5,
             width: MediaQuery.of(context).size.width,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.only(
@@ -1471,6 +1624,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
             child: Container(
               padding: EdgeInsets.all(16),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -1478,8 +1632,8 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          FocusScope.of(context).unfocus();
                           Navigator.of(context).pop();
+                          FocusScope.of(context).unfocus();
                         },
                         child: SvgPicture.asset('assets/svg/close.svg'),
                       ),
@@ -1506,90 +1660,137 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            // '${data.name}',
-                            '123',
-                            style: TextStyle(
-                              color: dark,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          SizedBox(
-                            height: 8,
-                          ),
-                          RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: 'Дансны дугаар: ',
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Хүлээн авагчийн нэр:',
                                   style: TextStyle(
                                     color: dark,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                                TextSpan(
-                                  // text: '${data.bankCardNo}',
-                                  text: '123',
+                              ),
+                              Expanded(
+                                child: Text(
+                                  '${data.accountName}',
                                   style: TextStyle(
                                     color: dark,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                           SizedBox(
                             height: 8,
                           ),
-                          RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: 'Банк: ',
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Хүлээн авагчийн банк:',
                                   style: TextStyle(
                                     color: dark,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                                TextSpan(
-                                  text: '${data.bankName}',
+                              ),
+                              Expanded(
+                                child: Text(
+                                  '${updatedBankName}',
                                   style: TextStyle(
                                     color: dark,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                           SizedBox(
                             height: 8,
                           ),
-                          RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: 'Утасны дугаар: ',
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Дансны дугаар:',
                                   style: TextStyle(
                                     color: dark,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                                TextSpan(
-                                  text: '${data.phone}',
+                              ),
+                              Expanded(
+                                child: Text(
+                                  '${data.accountNumber}',
                                   style: TextStyle(
                                     color: dark,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 8,
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Харилцах утас:',
+                                  style: TextStyle(
+                                    color: dark,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  '${data.phone}',
+                                  style: TextStyle(
+                                    color: dark,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 8,
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Төлбөрийн зориулалт:',
+                                  style: TextStyle(
+                                    color: dark,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  '${purpose}',
+                                  style: TextStyle(
+                                    color: dark,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -1610,7 +1811,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                     height: 8,
                   ),
                   Text(
-                    'Шимтгэл:  ₮ ${Utils().formatCurrency(dataReceive.fee.toString()) ?? 0}',
+                    'Шимтгэл: ¥ ${Utils().formatTextCustom(dataReceive.fee)}',
                     style: TextStyle(
                       color: dark,
                       fontSize: 14,
@@ -1621,7 +1822,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                     height: 8,
                   ),
                   Text(
-                    'Авах дүн:  ¥ ${dataReceive.toAmount ?? 0}',
+                    'Авах дүн: ₮ ${mntController.text}',
                     style: TextStyle(
                       color: dark,
                       fontSize: 14,
@@ -1632,7 +1833,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                     height: 8,
                   ),
                   Text(
-                    'Төлөх дүн: ₮ ${dataReceive.totalAmount ?? 0}',
+                    'Төлөх дүн: ¥ ${Utils().formatCurrencyCustom(dataReceive.totalAmount ?? 0)}',
                     style: TextStyle(
                       color: dark,
                       fontSize: 14,
@@ -1649,14 +1850,16 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                       });
                       setState(
                         () {
-                          // tools.toUpdateUser(
-                          // newbank: data.bankName!,
-                          // newbankid: data.bankCardNo!,
-                          // newphone: data.phone!,
-                          // newreceiver: data.name!,
-                          // );
+                          tools.toUpdateUser(
+                            newbank: data.bankName!,
+                            newbankid: data.accountNumber!,
+                            newphone: data.phone!,
+                            newreceiver: data.accountName!,
+                            newexchangePurpose: purpose,
+                          );
+                          final res = mntController.text.replaceAll(',', '');
                           tools.updateAll(
-                            newmnt: 123,
+                            newmnt: num.parse(res),
                             newcurrency: jpnController.text,
                             newtoValue: dataReceive.toValue.toString(),
                             newtotalAmount: dataReceive.totalAmount!,
@@ -1668,8 +1871,8 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                       setState(() {
                         confirmAll = false;
                       });
-                      FocusScope.of(context).unfocus();
                       Navigator.of(context).pop();
+                      FocusScope.of(context).unfocus();
                       setState(() {
                         user.contract == false
                             ? termsofservice()
@@ -1685,6 +1888,9 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                     isLoading: confirmAll,
                     labelText: 'Баталгаажуулах',
                     textColor: white,
+                  ),
+                  SizedBox(
+                    height: 24,
                   ),
                 ],
               ),
@@ -1937,14 +2143,8 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       children: [
-                        Text(
-                          'Egulen POS -Ухаалаг кассын систем ньресторан, зоогийн газар, дэлгүүр, эмнэлэг,гоо сайхны салон зэрэг худалдааүйлчилгээний газарт зориулагдсан багцбүтээгдэхүүн юм.Энэхүү үйлчилгээнийнөхцөл нь Egulen POS —Уxaanar кассынсистемийг ашиглан үйлчилгээ авахтайхолбоотой үүсэх харилцааг зохицуулна.Энэхүү нөхцөл нь хэрэг эгчөмнө уншиж танилцан хүлээн зөвшөөрчбаталгаажуулсны үндсэн дээр хэрэгжинэ Үйлчилгээний нөхцөлийн хэрэгжилтэд өгүүлэнСистем ХХК /цаашид байгууллага гэх/ болонхэрэглэгч /цаашид хэрэглэгч гэх/ хамтранхяналт тавинаНЭГ. Хэрэглэгчийн эрх үүрэгХэрэглэгч нь iРаd хэрэглэгч байх бөгөөдинтернэт (36 эсвэл W-Fi) холболттой байнаХэрэглэгч үйлчилгээг ашиглахтай холбоотойгарын авлага, сургалтыг авах боломжтойХэрэглэгч үйлчилгээний чанар, системийнажиллагааны талаар санал хүсэлт, гомдол,талархлаа хэлэх эрхтэйEgulen POS -Ухаалаг кассын систем ньресторан, зоогийн газар, дэлгүүр, эмнэлэг,гоо сайхны салон зэрэг худалдааүйлчилгээний газарт зориулагдсан багцбүтээгдэхүүн юм.Энэхүү үйлчилгэvэнийнөхцөл нь Egulen POS —Уxaanar кассынсистемийг ашиглан үйлчилгээ авахтайхолбоотой үүсэх харилцааг зохицуулна.Энэхүү нөхцөл нь хэрэг эгчөмнө уншиж танилцан хүлээн зөвшөөрчбаталгаажуулсны үндсэн дээр хэрэгжинэ Үйлчилгээний нөхцөлийн хэрэгжилтэд өгүүлэнСистем ХХК /цаашид байгууллага гэх/ болонхэрэглэгч /цаашид хэрэглэгч гэх/ хамтранхяналт тавинаНЭГ. Хэрэглэгчийн эрх үүрэг                  Egulen POS -Ухаалаг кассын систем ньресторан, зоогийн газар, дэлгүүр, эмнэлэг,гоо сайхны салон зэрэг худалдааүйлчилгээний газарт зориулагдсан багцбүтээгдэхүүн юм.Энэхүү үйлчилгээнийнөхцөл нь Egulen POS —Уxaanar кассынсистемийг ашиглан үйлчилгээ авахтайхолбоотой үүсэх харилцааг зохицуулна.Энэхүү нөхцөл нь хэрэг эгчөмнө уншиж танилцан хүлээн зөвшөөрчбаталгаажуулсны үндсэн дээр хэрэгжинэ Үйлчилгээний нөхцөлийн хэрэгжилтэд өгүүлэнСистем ХХК /цаашид байгууллага гэх/ болонхэрэглэгч /цаашид хэрэглэгч гэх/ хамтранхяналт тавинаНЭГ. Хэрэглэгчийн эрх үүрэгХэрэглэгч нь iРаd хэрэглэгч байх бөгөөдинтернэт (36 эсвэл W-Fi) холболттой байнаХэрэглэгч үйлчилгээг ашиглахтай холбоотойгарын авлага, сургалтыг авах боломжтойХэрэглэгч үйлчилгээний чанар, системийнажиллагааны талаар санал хүсэлт, гомдол,талархлаа хэлэх эрхтэйEgulen POS -Ухаалаг кассын систем ньресторан, зоогийн газар, дэлгүүр, эмнэлэг,гоо сайхны салон зэрэг худалдааүйлчилгээний газарт зориулагдсан багцбүтээгдэхүүн юм.Энэхүү үйлчилгэvэнийнөхцөл нь Egulen POS —Уxaanar кассынсистемийг ашиглан үйлчилгээ авахтайхолбоотой үүсэх харилцааг зохицуулна.Энэхүү нөхцөл нь хэрэг эгчөмнө уншиж танилцан хүлээн зөвшөөрчбаталгаажуулсны үндсэн дээр хэрэгжинэ Үйлчилгээний нөхцөлийн хэрэгжилтэд өгүүлэнСистем ХХК /цаашид байгууллага гэх/ болонхэрэглэгч /цаашид хэрэглэгч гэх/ хамтранхяналт тавинаНЭГ. Хэрэглэгчийн эрх үүрэг',
-                          style: TextStyle(
-                            color: black,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          textAlign: TextAlign.justify,
+                        Html(
+                          data: html,
                         ),
                         SizedBox(
                           height: 24,

@@ -7,6 +7,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:wx_exchange_flutter/models/general.dart';
 import 'package:wx_exchange_flutter/provider/general_provider.dart';
+import 'package:wx_exchange_flutter/src/exchange_page/exchange_page.dart';
 import 'package:wx_exchange_flutter/src/history_page/history_page.dart';
 import 'package:wx_exchange_flutter/src/notification_page/notification_page.dart';
 import 'package:wx_exchange_flutter/src/transfer_page/trans.dart';
@@ -36,9 +37,9 @@ class _MainPageState extends State<MainPage> {
   bool isLoading = true;
   final ScrollController _scrollController = ScrollController();
   General general = General();
+
   static const List<Widget> currentPages = [
-    // ExchangePage(),
-    // MoneyOrder(),
+    ExchangePage(),
     TransferPage(),
     HistoryPage(),
   ];
@@ -247,23 +248,6 @@ class _MainPageState extends State<MainPage> {
                     onTap: ontappedItem,
                     currentIndex: selectedIndex,
                     items: [
-                      // BottomNavigationBarItem(
-                      //   icon: Container(
-                      //     padding:
-                      //         EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      //     decoration: BoxDecoration(
-                      //       borderRadius: BorderRadius.circular(8),
-                      //       color: selectedIndex == 0
-                      //           ? blue.withOpacity(0.1)
-                      //           : null,
-                      //     ),
-                      //     child: SvgPicture.asset(
-                      //       'assets/svg/transfer.svg',
-                      //       color: selectedIndex == 0 ? blue : null,
-                      //     ),
-                      //   ),
-                      //   label: '',
-                      // ),
                       BottomNavigationBarItem(
                         icon: Container(
                           padding:
@@ -275,7 +259,7 @@ class _MainPageState extends State<MainPage> {
                                 : null,
                           ),
                           child: SvgPicture.asset(
-                            'assets/svg/export.svg',
+                            'assets/svg/transfer.svg',
                             color: selectedIndex == 0 ? blue : null,
                           ),
                         ),
@@ -292,8 +276,25 @@ class _MainPageState extends State<MainPage> {
                                 : null,
                           ),
                           child: SvgPicture.asset(
-                            'assets/svg/history.svg',
+                            'assets/svg/export.svg',
                             color: selectedIndex == 1 ? blue : null,
+                          ),
+                        ),
+                        label: '',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: selectedIndex == 2
+                                ? blue.withOpacity(0.1)
+                                : null,
+                          ),
+                          child: SvgPicture.asset(
+                            'assets/svg/history.svg',
+                            color: selectedIndex == 2 ? blue : null,
                           ),
                         ),
                         label: '',

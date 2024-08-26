@@ -54,10 +54,8 @@ General _$GeneralFromJson(Map<String, dynamic> json) {
     userNotfication: json['userNotfication'] != null
         ? json['userNotfication'] as bool
         : null,
-    jpyCurrency: json['jpyCurrency'] != null
-        ? new JpyCurrency.fromJson(json['jpyCurrency'])
-        : null,
     minMax: json['minMax'] != null ? new MinMax.fromJson(json['minMax']) : null,
+    contract: json['contract'] != null ? json['contract'] as String : null,
   );
 }
 
@@ -83,8 +81,8 @@ Map<String, dynamic> _$GeneralToJson(General instance) {
   if (instance.amountRange != null) json['amountRange'] = instance.amountRange;
   if (instance.userNotfication != null)
     json['userNotfication'] = instance.userNotfication;
-  if (instance.jpyCurrency != null) json['jpyCurrency'] = instance.jpyCurrency;
   if (instance.minMax != null) json['minMax'] = instance.minMax;
+  if (instance.contract != null) json['contract'] = instance.contract;
 
   return json;
 }

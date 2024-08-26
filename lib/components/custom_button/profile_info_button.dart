@@ -32,7 +32,7 @@ class _ProfileInfoButtonState extends State<ProfileInfoButton> {
       child: Container(
         width: MediaQuery.of(context).size.width,
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        height: 48,
+        height: 50,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: borderColor, width: 1),
@@ -53,7 +53,7 @@ class _ProfileInfoButtonState extends State<ProfileInfoButton> {
                   '${widget.text}',
                   style: TextStyle(
                     fontWeight: FontWeight.w400,
-                    fontSize: 12,
+                    fontSize: 14,
                     color: dark,
                   ),
                 ),

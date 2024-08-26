@@ -1,6 +1,7 @@
 import 'package:wx_exchange_flutter/models/account_transfer.dart';
 import 'package:wx_exchange_flutter/models/exchange.dart';
 import 'package:wx_exchange_flutter/models/history_model.dart';
+import 'package:wx_exchange_flutter/models/jpy_currency.dart';
 import 'package:wx_exchange_flutter/models/result.dart';
 import 'package:wx_exchange_flutter/utils/http_request.dart';
 
@@ -24,5 +25,10 @@ class ExchangeApi extends HttpRequest {
   getPay(String id) async {
     var res = await get('/trade/pay/$id');
     return AccountTransfer.fromJson(res);
+  }
+
+  getRate(JpyCurrency data) async {
+    var res = await get('/rate', data: data.toJson());
+    return JpyCurrency.fromJson(res as Map<String, dynamic>);
   }
 }

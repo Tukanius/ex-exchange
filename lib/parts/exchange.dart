@@ -20,13 +20,12 @@ Exchange _$ExchangeFromJson(Map<String, dynamic> json) {
         json['accountName'] != null ? json['accountName'] as String : null,
     accountNumber:
         json['accountNumber'] != null ? json['accountNumber'] as String : null,
-    // phone: json['phone'] != null ? json['phone'] as String : null,
+    phone: json['phone'] != null ? json['phone'] as String : null,
     contract: json['contract'] != null ? json['contract'] as bool : null,
     purpose: json['purpose'] != null ? json['purpose'] as String : null,
     swiftCode: json['swiftCode'] != null ? json['swiftCode'] as String : null,
     branchName:
         json['branchName'] != null ? json['branchName'] as String : null,
-
     branchAddress:
         json['branchAddress'] != null ? json['branchAddress'] as String : null,
   );
@@ -51,7 +50,7 @@ Map<String, dynamic> _$ExchangeToJson(Exchange instance) {
   if (instance.accountName != null) json['accountName'] = instance.accountName;
   if (instance.accountNumber != null)
     json['accountNumber'] = instance.accountNumber;
-  // if (instance.phone != null) json['phone'] = instance.phone;
+  if (instance.phone != null) json['phone'] = instance.phone;
   if (instance.contract != null) json['contract'] = instance.contract;
   if (instance.purpose != null) json['purpose'] = instance.purpose;
   if (instance.swiftCode != null) json['swiftCode'] = instance.swiftCode;

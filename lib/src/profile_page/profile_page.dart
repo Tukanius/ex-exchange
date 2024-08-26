@@ -18,6 +18,7 @@ import 'package:wx_exchange_flutter/src/profile_page/settings/address_settings.d
 import 'package:wx_exchange_flutter/src/profile_page/settings/email_settings.dart';
 import 'package:wx_exchange_flutter/src/profile_page/settings/password_settings.dart';
 import 'package:wx_exchange_flutter/src/profile_page/settings/phone_settings.dart';
+import 'package:wx_exchange_flutter/src/profile_page/settings/profile_delete.dart';
 import 'package:wx_exchange_flutter/src/profile_page/settings/receiver_settings.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
 
@@ -332,6 +333,58 @@ class _ProfilePageState extends State<ProfilePage> with AfterLayoutMixin {
   }
 
   bool danLoading = false;
+
+  void onLogOut(BuildContext context) async {
+    bool? shouldLogOut = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            "Баталгаажуулах",
+            style: TextStyle(
+              color: dark,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          content: Text(
+            "Та гарахдаа итгэлтэй байна уу?",
+            style: TextStyle(
+              color: dark,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text(
+                "Болих",
+                style: TextStyle(color: blue),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: Text(
+                "Гарах",
+                style: TextStyle(color: blue),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogOut == true) {
+      await Provider.of<UserProvider>(context, listen: false).logout();
+      Navigator.of(context).pushNamed(LoginPage.routeName);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -566,58 +619,68 @@ class _ProfilePageState extends State<ProfilePage> with AfterLayoutMixin {
                   SizedBox(
                     height: 16,
                   ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      width: MediaQuery.of(context).size.width,
-                      padding: EdgeInsets.all(16),
-                      height: 48,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: borderColor, width: 1),
-                        color: white,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Бүртгэлээ устгах',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 12,
-                                  color: dark,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Icon(
-                            Icons.arrow_forward_ios_outlined,
-                            color: dark,
-                            size: 14,
-                          ),
-                        ],
-                      ),
-                    ),
+                  ProfileInfoButton(
+                    text: 'Бүртгэлээ устгах',
+                    svgPath: 'assets/svg/delete.svg',
+                    onClick: () {
+                      Navigator.of(context)
+                          .pushNamed(ProfileDeletePage.routeName);
+                    },
                   ),
+                  // GestureDetector(
+                  //   onTap: () {},
+                  //   child: Container(
+                  //     width: MediaQuery.of(context).size.width,
+                  //     padding: EdgeInsets.all(16),
+                  //     height: 48,
+                  //     decoration: BoxDecoration(
+                  //       borderRadius: BorderRadius.circular(16),
+                  //       border: Border.all(color: borderColor, width: 1),
+                  //       color: white,
+                  //     ),
+                  //     child: Row(
+                  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //       children: [
+                  //         Row(
+                  //           children: [
+                  //             SvgPicture.asset('assets/svg/delete.svg'),
+                  //             Row(
+                  //               children: [
+                  //                 Text(
+                  //                   'Бүртгэлээ устгах',
+                  //                   style: TextStyle(
+                  //                     fontWeight: FontWeight.w400,
+                  //                     fontSize: 12,
+                  //                     color: dark,
+                  //                   ),
+                  //                 ),
+                  //               ],
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         Icon(
+                  //           Icons.arrow_forward_ios_outlined,
+                  //           color: dark,
+                  //           size: 14,
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                   SizedBox(
                     height: 16,
                   ),
                   GestureDetector(
-                    onTap: () async {
-                      await Provider.of<UserProvider>(context, listen: false)
-                          .logout();
-                      // Navigator.of(context).pushNamed(SplashScreen.routeName);
-                      Navigator.of(context).pushNamed(LoginPage.routeName);
+                    onTap: () {
+                      onLogOut(context);
                     },
                     child: Container(
                       width: MediaQuery.of(context).size.width,
                       padding: EdgeInsets.all(16),
-                      height: 48,
+                      height: 50,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: borderColor, width: 1),
+                        border: Border.all(color: blue, width: 1),
                         color: white,
                       ),
                       child: Row(

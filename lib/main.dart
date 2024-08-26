@@ -25,6 +25,7 @@ import 'package:wx_exchange_flutter/src/history_page/transfer_detail.dart';
 import 'package:wx_exchange_flutter/src/main_page.dart';
 import 'package:wx_exchange_flutter/src/notification_page/notification_page.dart';
 import 'package:wx_exchange_flutter/src/profile_page/profile_detail_page.dart';
+import 'package:wx_exchange_flutter/src/profile_page/settings/profile_delete.dart';
 import 'package:wx_exchange_flutter/src/profile_page/settings/receiver_settings.dart';
 import 'package:wx_exchange_flutter/src/transfer_page/remittance/remittance.dart';
 import 'package:wx_exchange_flutter/src/profile_page/profile_page.dart';
@@ -156,6 +157,7 @@ class _MyAppState extends State<MyApp> {
                   return MaterialPageRoute(builder: (context) {
                     return PaymentDetailPage(
                       data: arguments.data,
+                      type: arguments.type,
                     );
                   });
                 case RemittancePage.routeName:
@@ -229,6 +231,10 @@ class _MyAppState extends State<MyApp> {
                     return ProfileDetailPage(
                       data: arguments.data,
                     );
+                  });
+                case ProfileDeletePage.routeName:
+                  return MaterialPageRoute(builder: (context) {
+                    return const ProfileDeletePage();
                   });
                 default:
                   return MaterialPageRoute(

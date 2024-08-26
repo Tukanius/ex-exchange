@@ -1,12 +1,20 @@
-part '../../parts/general_parts/jpy_currency.dart';
+part '../parts/jpy_currency.dart';
 
 class JpyCurrency {
+  String? type;
+  String? currency;
   num? get;
   num? sell;
+  num? minLimit;
+  num? maxLimit;
 
   JpyCurrency({
     this.get,
     this.sell,
+    this.type,
+    this.currency,
+    this.minLimit,
+    this.maxLimit,
   });
   static $fromJson(Map<String, dynamic> json) => _$JpyCurrencyFromJson(json);
 

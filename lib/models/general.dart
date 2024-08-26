@@ -1,7 +1,6 @@
 import 'package:wx_exchange_flutter/models/general_%20models/amount_range.dart';
 import 'package:wx_exchange_flutter/models/general_%20models/bank_name.dart';
 import 'package:wx_exchange_flutter/models/general_%20models/currency_type.dart';
-import 'package:wx_exchange_flutter/models/general_%20models/jpy_currency.dart';
 import 'package:wx_exchange_flutter/models/general_%20models/minMax.dart';
 import 'package:wx_exchange_flutter/models/general_%20models/national.dart';
 import 'package:wx_exchange_flutter/models/general_%20models/object_status.dart';
@@ -27,7 +26,7 @@ class General {
   List<National>? national;
   List<AmountRange>? amountRange;
   bool? userNotfication;
-  JpyCurrency? jpyCurrency;
+  String? contract;
   MinMax? minMax;
 
   General({
@@ -43,8 +42,8 @@ class General {
     this.national,
     this.amountRange,
     this.userNotfication,
-    this.jpyCurrency,
     this.minMax,
+    this.contract,
   });
   static $fromJson(Map<String, dynamic> json) => _$GeneralFromJson(json);
 

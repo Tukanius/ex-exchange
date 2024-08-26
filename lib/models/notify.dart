@@ -1,8 +1,11 @@
+import 'package:wx_exchange_flutter/models/history_model.dart';
+
 part '../parts/notify.dart';
 
 class Notify {
   String? id;
-  String? user;
+  // String? user;
+  TradeHistory? trade;
   String? title;
   String? body;
   String? type;
@@ -13,7 +16,7 @@ class Notify {
 
   Notify({
     this.id,
-    this.user,
+    // this.user,
     this.title,
     this.body,
     this.type,
@@ -21,6 +24,7 @@ class Notify {
     this.createdAt,
     this.updatedAt,
     this.data,
+    this.trade,
   });
   static $fromJson(Map<String, dynamic> json) => _$NotifyFromJson(json);
 

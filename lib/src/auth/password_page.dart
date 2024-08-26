@@ -368,12 +368,14 @@ class _PassWordPageState extends State<PassWordPage> {
 }
 
 String? validatePassword(String value, context) {
-  RegExp regex = RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$');
+  RegExp regex = RegExp(
+      r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,12}$");
+
   if (value.isEmpty) {
     return 'Нууц үгээ оруулна уу';
   } else {
     if (!regex.hasMatch(value)) {
-      return 'Нууц үг багадаа 1 том үсэг 1 тоо авна';
+      return 'Нууц үг багадаа 1 том үсэг 1 тоо 1 тусгай тэмдэгт авна';
     } else {
       return null;
     }

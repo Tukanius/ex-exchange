@@ -38,6 +38,12 @@ class AuthApi extends HttpRequest {
     return User.fromJson(res as Map<String, dynamic>);
   }
 
+  updatePassword(User user) async {
+    var res =
+        await put('/user/change-password', data: user.toJson(), handler: true);
+    return User.fromJson(res as Map<String, dynamic>);
+  }
+
   logout() async {
     var res = await post('/auth/logout', handler: false);
     return res;

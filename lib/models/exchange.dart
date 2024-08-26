@@ -14,7 +14,7 @@ class Exchange {
   String? bankName;
   String? accountName;
   String? accountNumber;
-  // String? phone;
+  String? phone;
   bool? contract;
   String? purpose;
   String? swiftCode;
@@ -35,7 +35,7 @@ class Exchange {
     this.bankName,
     this.accountName,
     this.accountNumber,
-    // this.phone,
+    this.phone,
     this.contract,
     this.purpose,
     this.swiftCode,

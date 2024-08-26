@@ -6,6 +6,7 @@ import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:lottie/lottie.dart';
@@ -17,8 +18,10 @@ import 'package:wx_exchange_flutter/api/user_api.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/components/history_button/history_button.dart';
 import 'package:wx_exchange_flutter/components/loader/loader.dart';
+import 'package:wx_exchange_flutter/models/contract.dart';
 import 'package:wx_exchange_flutter/models/exchange.dart';
 import 'package:wx_exchange_flutter/models/general.dart';
+import 'package:wx_exchange_flutter/models/jpy_currency.dart';
 import 'package:wx_exchange_flutter/models/receiver.dart';
 import 'package:wx_exchange_flutter/models/result.dart';
 import 'package:wx_exchange_flutter/models/user.dart';
@@ -49,16 +52,16 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
   String? dropBankName;
   bool isLoading = true;
   bool isLoadingHistory = true;
+  bool isLoadingData = true;
   Timer? timer;
   String convertedValue = '0';
   Exchange dataReceive = Exchange();
   int page = 1;
   int limit = 10;
   int pageHistory = 1;
-  int limitHistory = 10;
+  int limitHistory = 15;
   Result result = Result();
   Result resultHistory = Result();
-  // final Utils _utils = Utils();
   TextEditingController mntController = TextEditingController();
   TextEditingController jpnController = TextEditingController();
   RefreshController refreshController =
@@ -68,6 +71,8 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
   User user = User();
   General general = General();
   bool tradeSubmit = false;
+  Contract contract = Contract();
+  JpyCurrency currency = JpyCurrency();
 
   @override
   void initState() {
@@ -85,33 +90,53 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
       setState(() {});
     }
   }
-  // void _formatInput() {
-  //   // Get the raw input from the controller
-  //   String rawText = mntController.text;
 
-  //   // Format the input using the updated formatCurrency method
-  //   String formattedText = _utils.formatCurrency(rawText);
+  @override
+  void dispose() {
+    timer?.cancel();
+    bankName.removeListener(_onFocusChange);
+    accountNumber.removeListener(_onFocusChange);
+    swiftCode.removeListener(_onFocusChange);
+    branchName.removeListener(_onFocusChange);
+    branchAddress.removeListener(_onFocusChange);
+    accountName.removeListener(_onFocusChange);
 
-  //   // Update the text with the formatted value
-  //   mntController.value = TextEditingValue(
-  //     text: formattedText,
-  //     selection: TextSelection.collapsed(offset: formattedText.length),
-  //   );
-  // }
+    bankName.dispose();
+    accountNumber.dispose();
+    swiftCode.dispose();
+    branchName.dispose();
+    branchAddress.dispose();
+    accountName.dispose();
+    super.dispose();
+  }
 
+  String html = '''''';
   @override
   afterFirstLayout(BuildContext context) async {
     user = await AuthApi().me(false);
-
     try {
       await list(page, limit);
       await listHistory(page, limit);
+      contract = await UserApi().getContract();
+      currency.currency = 'JPY';
+      currency.type = 'TRANSFER';
+      currency = await ExchangeApi().getRate(currency);
+      print('==currency===');
+      print(currency.get);
+      print(currency.sell);
+
+      print('==currency===');
+      html = '''${contract.description}''';
+      setState(() {
+        isLoadingData = false;
+      });
     } catch (e) {
       print(e.toString());
       if (mounted) {
         setState(() {
           isLoading = false;
           isLoadingHistory = false;
+          isLoadingData = false;
         });
       }
     }
@@ -157,8 +182,6 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
     });
   }
 
-  bool isValueErrorLimit = false;
-
   onChange(String query) async {
     print('=======query======');
     final cleanValue = query.replaceAll(',', '');
@@ -167,10 +190,14 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
 
     if (cleanValue != '') {
       setState(() {
-        isValueError = num.parse(cleanValue) < general.minMax!.min!;
-        isValueErrorLimit = num.parse(cleanValue) > general.minMax!.max!;
-        print(isValueErrorLimit);
+        isEmpty = false;
+        if (num.parse(cleanValue) == currency.minLimit) isValueError = false;
+        if (num.parse(cleanValue) == currency.maxLimit)
+          isValueErrorLimit = false;
+        isValueError = num.parse(cleanValue) < currency.minLimit!;
+        isValueErrorLimit = num.parse(cleanValue) > currency.maxLimit!;
         print(isValueError);
+        print(isValueErrorLimit);
       });
       Exchange data = Exchange();
       if (timer != null) timer!.cancel();
@@ -184,7 +211,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
           data.fromCurrency = "JPY";
           data.toCurrency = "MNT";
           data.fromAmount = num.parse(cleanValue);
-          num.parse(cleanValue) >= general.minMax!.min!
+          num.parse(cleanValue) >= currency.minLimit!
               ? dataReceive = await ExchangeApi().tradeConvertor(data)
               : SizedBox();
           if (!mounted) return;
@@ -223,44 +250,36 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
 //           });
 //         }
 //       }
-  @override
-  void dispose() {
-    timer?.cancel();
-    bankName.removeListener(_onFocusChange);
-    accountNumber.removeListener(_onFocusChange);
-    swiftCode.removeListener(_onFocusChange);
-    branchName.removeListener(_onFocusChange);
-    branchAddress.removeListener(_onFocusChange);
-    accountName.removeListener(_onFocusChange);
-
-    bankName.dispose();
-    accountNumber.dispose();
-    swiftCode.dispose();
-    branchName.dispose();
-    branchAddress.dispose();
-    accountName.dispose();
-    super.dispose();
-  }
 
   bool isValueError = false;
   bool isSetUser = true;
   bool purposeTrade = true;
+  bool isEmpty = false;
+  bool isValueErrorLimit = false;
 
   verify() async {
     if (user.userStatus == "NEW") {
       danVerify(context);
-      // VERIFIED
     } else {
-      if (isValueError == false) {
+      print('===========focus==========');
+      print(mntController.text);
+      print('===========focus==========');
+
+      if (mntController.text == "") {
         setState(() {
-          print(mntController.text);
-          var res = mntController.text.replaceAll(',', '');
-          num.parse(res) >= general.minMax!.min!
-              ? isValueError = false
-              : isValueError = true;
-          print(isValueError);
+          isEmpty = true;
         });
       }
+      // if (isValueError == false) {
+      //   setState(() {
+      //     print(mntController.text);
+      //     var res = mntController.text.replaceAll(',', '');
+      //     num.parse(res) >= general.minMax!.min!
+      //         ? isValueError = false
+      //         : isValueError = true;
+      //     print(isValueError);
+      //   });
+      // }
 
       if (isSetUser == true) {
         if (receiverBox == '') {
@@ -292,7 +311,8 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
       if (isValueError == false &&
           isValueErrorLimit == false &&
           isSetUser == true &&
-          purposeTrade == true) {
+          purposeTrade == true &&
+          isEmpty == false) {
         confirm(context, info);
       } else {
         print("error");
@@ -416,7 +436,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                                         top: 4,
                                       ),
                                       child: Text(
-                                        'Гуйвуулгын хамгийн бага дүн ¥ ${Utils().formatTextCustom(general.minMax!.min)}.',
+                                        'Гуйвуулгын хамгийн бага дүн ¥ ${Utils().formatTextCustom(currency.minLimit)}.',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
@@ -434,6 +454,23 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                                       ),
                                       child: Text(
                                         'Гуйвуулгын дүнгийн лимит хэтэрсэн',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: redError,
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox(),
+                              isEmpty == true
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 32,
+                                        right: 16,
+                                        top: 4,
+                                      ),
+                                      child: Text(
+                                        'Гуйвуулгын дүн оруулна уу.',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
@@ -578,7 +615,9 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                           height: 16,
                         ),
                         Text(
-                          '1 JPY = ${general.jpyCurrency?.sell ?? 0} MNT',
+                          isLoadingData == true
+                              ? '1 JPY = 0 MNT'
+                              : '1 JPY = ${currency.sell} MNT',
                           style: TextStyle(
                               color: dark,
                               fontSize: 14,
@@ -1297,7 +1336,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                         labelText: 'Болсон',
                         textColor: white,
                       ),
-                      SizedBox(height: 100),
+                      SizedBox(height: 50),
                     ],
                   ),
                 ),
@@ -1521,8 +1560,8 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                       children: [
                         GestureDetector(
                           onTap: () {
-                            FocusScope.of(context).unfocus();
                             Navigator.of(context).pop();
+                            FocusScope.of(context).unfocus();
                           },
                           child: SvgPicture.asset('assets/svg/close.svg'),
                         ),
@@ -1739,193 +1778,6 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                         ),
                       ),
                     ),
-                    // Container(
-                    //   width: MediaQuery.of(context).size.width,
-                    //   decoration: BoxDecoration(
-                    //     borderRadius: BorderRadius.circular(16),
-                    //     border: Border.all(width: 1, color: borderColor),
-                    //   ),
-                    //   child: Padding(
-                    //     padding: EdgeInsets.all(16),
-                    //     child: Column(
-                    //       crossAxisAlignment: CrossAxisAlignment.start,
-                    //       children: [
-                    //         RichText(
-                    //           text: TextSpan(
-                    //             children: [
-                    //               TextSpan(
-                    //                 text: 'Bank name: ',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 14,
-                    //                   fontWeight: FontWeight.w400,
-                    //                 ),
-                    //               ),
-                    //               TextSpan(
-                    //                 text: '${data.bankName}',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 16,
-                    //                   fontWeight: FontWeight.w600,
-                    //                 ),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //         ),
-                    //         SizedBox(
-                    //           height: 8,
-                    //         ),
-                    //         RichText(
-                    //           text: TextSpan(
-                    //             children: [
-                    //               TextSpan(
-                    //                 text: 'Account number: ',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 14,
-                    //                   fontWeight: FontWeight.w400,
-                    //                 ),
-                    //               ),
-                    //               TextSpan(
-                    //                 text: '${data.accountNumber}',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 16,
-                    //                   fontWeight: FontWeight.w600,
-                    //                 ),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //         ),
-                    //         SizedBox(
-                    //           height: 8,
-                    //         ),
-                    //         RichText(
-                    //           text: TextSpan(
-                    //             children: [
-                    //               TextSpan(
-                    //                 text: 'Swift code: ',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 14,
-                    //                   fontWeight: FontWeight.w400,
-                    //                 ),
-                    //               ),
-                    //               TextSpan(
-                    //                 text: '${data.swiftCode}',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 16,
-                    //                   fontWeight: FontWeight.w600,
-                    //                 ),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //         ),
-                    //         SizedBox(
-                    //           height: 8,
-                    //         ),
-                    //         RichText(
-                    //           text: TextSpan(
-                    //             children: [
-                    //               TextSpan(
-                    //                 text: 'Branch name: ',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 14,
-                    //                   fontWeight: FontWeight.w400,
-                    //                 ),
-                    //               ),
-                    //               TextSpan(
-                    //                 text: '${data.branchName}',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 16,
-                    //                   fontWeight: FontWeight.w600,
-                    //                 ),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //         ),
-                    //         SizedBox(
-                    //           height: 8,
-                    //         ),
-                    //         RichText(
-                    //           text: TextSpan(
-                    //             children: [
-                    //               TextSpan(
-                    //                 text: 'Branch address: ',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 14,
-                    //                   fontWeight: FontWeight.w400,
-                    //                 ),
-                    //               ),
-                    //               TextSpan(
-                    //                 text: '${data.branchAddress}',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 16,
-                    //                   fontWeight: FontWeight.w600,
-                    //                 ),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //         ),
-                    //         SizedBox(
-                    //           height: 8,
-                    //         ),
-                    //         RichText(
-                    //           text: TextSpan(
-                    //             children: [
-                    //               TextSpan(
-                    //                 text: 'Account name: ',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 14,
-                    //                   fontWeight: FontWeight.w400,
-                    //                 ),
-                    //               ),
-                    //               TextSpan(
-                    //                 text: '${data.accountName}',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 16,
-                    //                   fontWeight: FontWeight.w600,
-                    //                 ),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //         ),
-                    //         SizedBox(
-                    //           height: 8,
-                    //         ),
-                    //         RichText(
-                    //           text: TextSpan(
-                    //             children: [
-                    //               TextSpan(
-                    //                 text: 'Төлбөрийн зориулалт: ',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 14,
-                    //                   fontWeight: FontWeight.w400,
-                    //                 ),
-                    //               ),
-                    //               TextSpan(
-                    //                 text: '${purpose}',
-                    //                 style: TextStyle(
-                    //                   color: dark,
-                    //                   fontSize: 16,
-                    //                   fontWeight: FontWeight.w600,
-                    //                 ),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ),
                     SizedBox(
                       height: 8,
                     ),
@@ -2286,14 +2138,8 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       children: [
-                        Text(
-                          'Egulen POS -Ухаалаг кассын систем ньресторан, зоогийн газар, дэлгүүр, эмнэлэг,гоо сайхны салон зэрэг худалдааүйлчилгээний газарт зориулагдсан багцбүтээгдэхүүн юм.Энэхүү үйлчилгээнийнөхцөл нь Egulen POS —Уxaanar кассынсистемийг ашиглан үйлчилгээ авахтайхолбоотой үүсэх харилцааг зохицуулна.Энэхүү нөхцөл нь хэрэг эгчөмнө уншиж танилцан хүлээн зөвшөөрчбаталгаажуулсны үндсэн дээр хэрэгжинэ Үйлчилгээний нөхцөлийн хэрэгжилтэд өгүүлэнСистем ХХК /цаашид байгууллага гэх/ болонхэрэглэгч /цаашид хэрэглэгч гэх/ хамтранхяналт тавинаНЭГ. Хэрэглэгчийн эрх үүрэгХэрэглэгч нь iРаd хэрэглэгч байх бөгөөдинтернэт (36 эсвэл W-Fi) холболттой байнаХэрэглэгч үйлчилгээг ашиглахтай холбоотойгарын авлага, сургалтыг авах боломжтойХэрэглэгч үйлчилгээний чанар, системийнажиллагааны талаар санал хүсэлт, гомдол,талархлаа хэлэх эрхтэйEgulen POS -Ухаалаг кассын систем ньресторан, зоогийн газар, дэлгүүр, эмнэлэг,гоо сайхны салон зэрэг худалдааүйлчилгээний газарт зориулагдсан багцбүтээгдэхүүн юм.Энэхүү үйлчилгэvэнийнөхцөл нь Egulen POS —Уxaanar кассынсистемийг ашиглан үйлчилгээ авахтайхолбоотой үүсэх харилцааг зохицуулна.Энэхүү нөхцөл нь хэрэг эгчөмнө уншиж танилцан хүлээн зөвшөөрчбаталгаажуулсны үндсэн дээр хэрэгжинэ Үйлчилгээний нөхцөлийн хэрэгжилтэд өгүүлэнСистем ХХК /цаашид байгууллага гэх/ болонхэрэглэгч /цаашид хэрэглэгч гэх/ хамтранхяналт тавинаНЭГ. Хэрэглэгчийн эрх үүрэг                  Egulen POS -Ухаалаг кассын систем ньресторан, зоогийн газар, дэлгүүр, эмнэлэг,гоо сайхны салон зэрэг худалдааүйлчилгээний газарт зориулагдсан багцбүтээгдэхүүн юм.Энэхүү үйлчилгээнийнөхцөл нь Egulen POS —Уxaanar кассынсистемийг ашиглан үйлчилгээ авахтайхолбоотой үүсэх харилцааг зохицуулна.Энэхүү нөхцөл нь хэрэг эгчөмнө уншиж танилцан хүлээн зөвшөөрчбаталгаажуулсны үндсэн дээр хэрэгжинэ Үйлчилгээний нөхцөлийн хэрэгжилтэд өгүүлэнСистем ХХК /цаашид байгууллага гэх/ болонхэрэглэгч /цаашид хэрэглэгч гэх/ хамтранхяналт тавинаНЭГ. Хэрэглэгчийн эрх үүрэгХэрэглэгч нь iРаd хэрэглэгч байх бөгөөдинтернэт (36 эсвэл W-Fi) холболттой байнаХэрэглэгч үйлчилгээг ашиглахтай холбоотойгарын авлага, сургалтыг авах боломжтойХэрэглэгч үйлчилгээний чанар, системийнажиллагааны талаар санал хүсэлт, гомдол,талархлаа хэлэх эрхтэйEgulen POS -Ухаалаг кассын систем ньресторан, зоогийн газар, дэлгүүр, эмнэлэг,гоо сайхны салон зэрэг худалдааүйлчилгээний газарт зориулагдсан багцбүтээгдэхүүн юм.Энэхүү үйлчилгэvэнийнөхцөл нь Egulen POS —Уxaanar кассынсистемийг ашиглан үйлчилгээ авахтайхолбоотой үүсэх харилцааг зохицуулна.Энэхүү нөхцөл нь хэрэг эгчөмнө уншиж танилцан хүлээн зөвшөөрчбаталгаажуулсны үндсэн дээр хэрэгжинэ Үйлчилгээний нөхцөлийн хэрэгжилтэд өгүүлэнСистем ХХК /цаашид байгууллага гэх/ болонхэрэглэгч /цаашид хэрэглэгч гэх/ хамтранхяналт тавинаНЭГ. Хэрэглэгчийн эрх үүрэг',
-                          style: TextStyle(
-                            color: black,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          textAlign: TextAlign.justify,
+                        Html(
+                          data: html,
                         ),
                         SizedBox(
                           height: 24,

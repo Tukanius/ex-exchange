@@ -540,9 +540,16 @@ String? validateReg(String value) {
 }
 
 String? validateEmail(String value) {
+  RegExp regex =
+      RegExp(r"^[\w|_|.]{2,120}\@([\w\d])+(\.|-|_){0,1}[\w\d]{0,}\.[\w]{2,3}$");
+
   if (value.isEmpty) {
     return 'И-Мэйлээ оруулна уу';
   } else {
-    return null;
+    if (!regex.hasMatch(value)) {
+      return 'И-Мэйлээ шалгана уу!';
+    } else {
+      return null;
+    }
   }
 }

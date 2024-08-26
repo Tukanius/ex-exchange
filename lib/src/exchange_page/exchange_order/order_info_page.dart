@@ -8,8 +8,11 @@ import 'package:wx_exchange_flutter/api/exchange_api.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/models/account_transfer.dart';
 import 'package:wx_exchange_flutter/models/exchange.dart';
+import 'package:wx_exchange_flutter/models/general.dart';
 import 'package:wx_exchange_flutter/provider/exchange_provider.dart';
+import 'package:wx_exchange_flutter/provider/general_provider.dart';
 import 'package:wx_exchange_flutter/src/exchange_page/exchange_order/payment_info_page.dart';
+import 'package:wx_exchange_flutter/utils/utils.dart';
 import 'package:wx_exchange_flutter/widget/ui/animated_text_field/animated_textfield.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
 
@@ -36,7 +39,41 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
   Exchange data = Exchange();
   AccountTransfer payData = AccountTransfer();
   bool isLoading = false;
-  onSubmit(ExchangeProvider tools) async {
+
+  String getBankName(String code) {
+    switch (code) {
+      case 'KHANBANK':
+        return 'Хаан банк';
+      case 'GOLOMTBANK':
+        return 'Голомт банк';
+      case 'TDBANK':
+        return 'Худалдаа хөгжлийн банк';
+      case 'KHASBANK':
+        return 'Хас банк';
+      case 'CREDITBANK':
+        return 'Кредит банк';
+      case 'STATEBANK':
+        return 'Төрийн банк';
+      case 'ARIGBANK':
+        return 'Ариг банк';
+      case 'CAPITRONBANK':
+        return 'Капитрон банк';
+      case 'MBANK':
+        return 'М банк';
+      case 'BOGDBANK':
+        return 'Богд банк';
+      case 'TRANSDEVBANK':
+        return 'Тээвэр хөгжлийн банк';
+      case 'NIBANK':
+        return 'Үндэсний хөрөнгө оруулалтын банк';
+      case 'CHINGISKHANBANK':
+        return 'Чингис хаан банк';
+      default:
+        return 'Хаан банк';
+    }
+  }
+
+  onSubmit(ExchangeProvider tools, General general) async {
     print('HELOOO');
     print(tools.toString());
     print('HELOOO');
@@ -45,14 +82,25 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
       setState(() {
         isLoading = true;
       });
+      String? matchedPurpose;
+      for (var purposeType in general.purposeTypes!) {
+        if (purposeType.name == tools.tradePurpose) {
+          matchedPurpose = purposeType.code;
+          break;
+        }
+      }
       data.type = "EXCHANGE";
       data.fromCurrency = "MNT";
       data.fromAmount = tools.mnt;
-      data.toCurrency = "CNY";
+      data.toCurrency = "JPY";
       data.toAmount = num.parse(tools.toAmount);
       data.rate = num.parse(tools.toValue);
       data.fee = tools.fee;
-      data.bankName = tools.bank;
+      data.bankName = tools.BankName;
+      data.purpose = matchedPurpose;
+      data.accountNumber = tools.AccountNumber;
+      data.accountName = tools.AccountName;
+      data.phone = tools.phone;
       // data.name = tools.receiver;
       // data.bankCardNo = tools.bankid;
       data.sign = base64Encode(widget.signature);
@@ -72,6 +120,7 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
         PaymentDetailPage.routeName,
         arguments: PaymentDetailPageArguments(
           data: payData,
+          type: "EXCHANGE",
         ),
       );
     } catch (e) {
@@ -85,6 +134,8 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
   @override
   Widget build(BuildContext context) {
     var tools = Provider.of<ExchangeProvider>(context, listen: true);
+    var general = Provider.of<GeneralProvider>(context, listen: true).general;
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -133,12 +184,13 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                         top: 16,
                       ),
                       child: AnimatedTextField(
-                        labelText: 'Төгрөг  / лимит: 25,000,000 /',
+                        labelText: 'Төгрөг',
                         name: 'mnt',
                         focusNode: mnt,
                         borderColor: blue,
                         colortext: dark,
-                        initialValue: '₮ ${tools.mnt}',
+                        initialValue:
+                            '₮ ${Utils().formatTextCustom(tools.mnt)}',
                         readOnly: true,
                         prefixIcon: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -183,13 +235,13 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                         bottom: 16,
                       ),
                       child: AnimatedTextField(
-                        labelText: 'Иен  / лимит: 5,000,000 /',
+                        labelText: 'Иен',
                         readOnly: true,
                         name: 'yen',
                         focusNode: yen,
                         borderColor: blue,
                         colortext: dark,
-                        initialValue: '₮ ${tools.currency}',
+                        initialValue: '¥ ${tools.currency}',
                         prefixIcon: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -225,95 +277,144 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                 width: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: borderColor),
+                  border: Border.all(width: 1, color: borderColor),
                 ),
                 child: Padding(
                   padding: EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${tools.receiver}',
-                        style: TextStyle(
-                          color: dark,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(
-                        height: 8,
-                      ),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Дансны дугаар: ',
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Хүлээн авагчийн нэр:',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            TextSpan(
-                              text: '${tools.bankid}',
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.AccountName}',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       SizedBox(
                         height: 8,
                       ),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Банк: ',
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Хүлээн авагчийн банк:',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            TextSpan(
-                              text: '${tools.bank}',
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${getBankName(tools.BankName)}',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       SizedBox(
                         height: 8,
                       ),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Утасны дугаар: ',
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Дансны дугаар:',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            TextSpan(
-                              text: '${tools.phone}',
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.AccountNumber}',
                               style: TextStyle(
                                 color: dark,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 8,
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Харилцах утас:',
+                              style: TextStyle(
+                                color: dark,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.phone}',
+                              style: TextStyle(
+                                color: dark,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 8,
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Төлбөрийн зориулалт:',
+                              style: TextStyle(
+                                color: dark,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${tools.tradePurpose}',
+                              style: TextStyle(
+                                color: dark,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -323,18 +424,7 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                 height: 16,
               ),
               Text(
-                '1 MNT = ${tools.toValue} JPY',
-                style: TextStyle(
-                  color: dark,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(
-                height: 8,
-              ),
-              Text(
-                'Нийт төлөх дүн: ₮ ${tools.totalAmount}',
+                '1 JPY = ${tools.toValue} MNT',
                 style: TextStyle(
                   color: dark,
                   fontSize: 14,
@@ -345,7 +435,18 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                 height: 8,
               ),
               Text(
-                'Шимтгэл: ₮ ${tools.fee}',
+                'Шимтгэл: ¥ ${Utils().formatTextCustom(tools.fee)}',
+                style: TextStyle(
+                  color: dark,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              SizedBox(
+                height: 8,
+              ),
+              Text(
+                'Хүлээн авах дүн: ₮ ${Utils().formatTextCustom(tools.mnt)}',
                 style: TextStyle(
                   color: dark,
                   fontSize: 14,
@@ -367,7 +468,7 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Хүлээн авах дүн:',
+                        'Нийт төлөх дүн:',
                         style: TextStyle(
                           color: blue.withOpacity(0.75),
                           fontSize: 12,
@@ -375,7 +476,7 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                         ),
                       ),
                       Text(
-                        '¥ ${tools.toAmount}',
+                        '¥ ${Utils().formatCurrencyCustom(tools.totalAmount)}',
                         style: TextStyle(
                           color: blue,
                           fontSize: 24,
@@ -454,7 +555,7 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
               ),
               CustomButton(
                 onClick: () {
-                  onSubmit(tools);
+                  onSubmit(tools, general);
                 },
                 buttonColor: blue,
                 isLoading: false,

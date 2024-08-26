@@ -80,9 +80,7 @@ class _RemittancePageState extends State<RemittancePage> {
 
       Navigator.of(context).pushNamed(
         PaymentDetailPage.routeName,
-        arguments: PaymentDetailPageArguments(
-          data: payData,
-        ),
+        arguments: PaymentDetailPageArguments(data: payData, type: "TRANSFER"),
       );
     } catch (e) {
       setState(() {

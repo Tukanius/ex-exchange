@@ -40,11 +40,13 @@ class ExchangeProvider extends ChangeNotifier {
     required String newbankid,
     required String newbank,
     required String newphone,
+    required String newexchangePurpose,
   }) {
-    receiver = newreceiver;
-    bankid = newbankid;
-    bank = newbank;
+    AccountName = newreceiver;
+    AccountNumber = newbankid;
+    BankName = newbank;
     phone = newphone;
+    tradePurpose = newexchangePurpose;
     notifyListeners();
   }
 

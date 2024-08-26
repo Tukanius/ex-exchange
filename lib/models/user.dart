@@ -25,6 +25,8 @@ class User {
   String? message;
   bool? contract;
   String? deviceToken;
+  String? oldPassword;
+
   User({
     this.username,
     this.password,
@@ -50,6 +52,7 @@ class User {
     this.message,
     this.contract,
     this.deviceToken,
+    this.oldPassword,
   });
 
   static $fromJson(Map<String, dynamic> json) => _$UserFromJson(json);

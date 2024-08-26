@@ -7,7 +7,8 @@ import 'package:wx_exchange_flutter/components/controller/listen.dart';
 import 'package:wx_exchange_flutter/components/notify_card/notify_card.dart';
 import 'package:wx_exchange_flutter/components/refresher/refresher.dart';
 import 'package:wx_exchange_flutter/models/result.dart';
-import 'package:wx_exchange_flutter/src/main_page.dart';
+import 'package:wx_exchange_flutter/src/history_page/exchange.dart';
+import 'package:wx_exchange_flutter/src/history_page/transfer_detail.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
 
 class NotificationPage extends StatefulWidget {
@@ -132,12 +133,31 @@ class _NotificationPageState extends State<NotificationPage>
                                             await UserApi().seenNot(data.id);
                                         print('===CLICKED===');
                                         print(res);
+                                        print(data.data);
                                         print('===CLICKED===');
-                                        Navigator.of(context).pushNamed(
-                                          MainPage.routeName,
-                                          arguments: MainPageArguments(
-                                              initialIndex: 1),
-                                        );
+                                        if (data.type == "TRANSFER") {
+                                          Navigator.of(context).pushNamed(
+                                            TransferDetailPage.routeName,
+                                            arguments:
+                                                TransferDetailPageArguments(
+                                              data: data.trade,
+                                            ),
+                                          );
+                                        } else {
+                                          Navigator.of(context).pushNamed(
+                                            OrderDetailPage.routeName,
+                                            arguments: OrderDetailPageArguments(
+                                              data: data.trade,
+                                            ),
+                                          );
+                                        }
+                                        // Navigator.of(context).pushNamed(
+                                        //   TransferDetailPage.routeName,
+                                        //   arguments:
+                                        //       TransferDetailPageArguments(
+                                        //     data: data.trade,
+                                        //   ),
+                                        // );
                                       },
                                       data: data,
                                     ),
