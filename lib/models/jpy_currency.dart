@@ -7,6 +7,7 @@ class JpyCurrency {
   num? sell;
   num? minLimit;
   num? maxLimit;
+  String? getType;
 
   JpyCurrency({
     this.get,
@@ -15,6 +16,7 @@ class JpyCurrency {
     this.currency,
     this.minLimit,
     this.maxLimit,
+    this.getType,
   });
   static $fromJson(Map<String, dynamic> json) => _$JpyCurrencyFromJson(json);
 

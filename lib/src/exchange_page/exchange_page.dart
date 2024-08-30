@@ -15,6 +15,7 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:wx_exchange_flutter/api/auth_api.dart';
 import 'package:wx_exchange_flutter/api/exchange_api.dart';
 import 'package:wx_exchange_flutter/api/user_api.dart';
+import 'package:wx_exchange_flutter/components/controller/listen.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/components/history_button/history_button.dart';
 import 'package:wx_exchange_flutter/components/loader/loader.dart';
@@ -73,7 +74,10 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
   bool tradeSubmit = false;
   Contract contract = Contract();
   String html = '''''';
-  JpyCurrency currency = JpyCurrency();
+  JpyCurrency currencyBuy = JpyCurrency();
+  JpyCurrency currencySell = JpyCurrency();
+  ListenController listenController = ListenController();
+  bool index = true;
 
   @override
   void initState() {
@@ -110,11 +114,16 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
       await list(page, limit);
       await listHistory(page, limit);
       contract = await UserApi().getContract();
-      currency.type = 'EXCHANGE';
-      currency.currency = 'JPY';
-      currency = await ExchangeApi().getRate(currency);
+      currencyBuy.type = 'EXCHANGE';
+      currencyBuy.currency = 'JPY';
+      currencyBuy.getType = "BUY";
+      currencyBuy = await ExchangeApi().getRate(currencyBuy);
+      currencySell.type = 'EXCHANGE';
+      currencySell.currency = 'JPY';
+      currencySell.getType = "SELL";
+      currencySell = await ExchangeApi().getRate(currencySell);
       print('=============get===========');
-      print(currency.get);
+      print(currencyBuy.get);
       print('=============get===========');
 
       html = '''${contract.description}''';
@@ -184,11 +193,17 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
     if (cleanValue != '') {
       setState(() {
         isEmpty = false;
-        if (num.parse(cleanValue) == currency.minLimit) isValueError = false;
-        if (num.parse(cleanValue) == currency.maxLimit)
+
+        if (num.parse(cleanValue) ==
+            (index == true ? currencyBuy.minLimit : currencySell.minLimit))
+          isValueError = false;
+        if (num.parse(cleanValue) ==
+            (index == true ? currencyBuy.maxLimit : currencySell.maxLimit))
           isValueErrorLimit = false;
-        isValueError = num.parse(cleanValue) < currency.minLimit!;
-        isValueErrorLimit = num.parse(cleanValue) >= currency.maxLimit!;
+        isValueError = num.parse(cleanValue) <
+            (index == true ? currencyBuy.minLimit! : currencySell.minLimit!);
+        isValueErrorLimit = num.parse(cleanValue) >
+            (index == true ? currencyBuy.maxLimit! : currencySell.maxLimit!);
         print(isValueError);
         print(isValueErrorLimit);
       });
@@ -201,10 +216,14 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
         if (!mounted) return;
         try {
           data.type = "EXCHANGE";
-          data.fromCurrency = "MNT";
-          data.toCurrency = "JPY";
+          data.fromCurrency = "JPY";
+          data.toCurrency = "MNT";
           data.fromAmount = num.parse(cleanValue);
-          num.parse(cleanValue) >= currency.minLimit!
+          data.getType = index == true ? "BUY" : "SELL";
+          num.parse(cleanValue) >=
+                  (index == true
+                      ? currencyBuy.minLimit
+                      : currencySell.minLimit)!
               ? dataReceive = await ExchangeApi().tradeConvertor(data)
               : SizedBox();
           if (!mounted) return;
@@ -215,6 +234,16 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
           setState(() {
             tradeSubmit = false;
           });
+          if (isValueError == true) {
+            jpnController.text = '0';
+            dataReceive.fee = 0;
+            dataReceive.toValue = 0;
+          }
+          if (isValueErrorLimit == true) {
+            jpnController.text = '0';
+            dataReceive.fee = 0;
+            dataReceive.toValue = 0;
+          }
         } catch (e) {
           print(e.toString());
           if (mounted) {
@@ -228,6 +257,12 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
             });
           }
         }
+      });
+    } else {
+      setState(() {
+        jpnController.text = '0';
+        dataReceive.fee = 0;
+        dataReceive.toValue = 0;
       });
     }
   }
@@ -411,6 +446,94 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                         ),
                         Container(
                           width: MediaQuery.of(context).size.width,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: white,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    setState(() {
+                                      index = true;
+                                      mntController.clear();
+                                      jpnController.text = '0';
+                                      dataReceive.fee = 0;
+                                      dataReceive.toValue = 0;
+                                    });
+                                    // currency.type = 'EXCHANGE';
+                                    // currency.currency = 'JPY';
+                                    // currency.getType = "BUY";
+                                    // currency =
+                                    //     await ExchangeApi().getRate(currency);
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      color: index == true
+                                          ? blue.withOpacity(0.1)
+                                          : white,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Валют авах',
+                                        style: TextStyle(
+                                          color: index == true ? blue : dark,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    setState(() {
+                                      index = false;
+                                      mntController.clear();
+                                      jpnController.text = '0';
+                                      dataReceive.fee = 0;
+                                      dataReceive.toValue = 0;
+                                    });
+                                    // currency.type = 'EXCHANGE';
+                                    // currency.currency = 'JPY';
+                                    // currency.getType = "SELL";
+                                    // currency =
+                                    //     await ExchangeApi().getRate(currency);
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      color: index == false
+                                          ? blue.withOpacity(0.1)
+                                          : white,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Валют зарах',
+                                        style: TextStyle(
+                                          color: index == false ? blue : dark,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
+                        Container(
+                          width: MediaQuery.of(context).size.width,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: borderColor, width: 1),
@@ -429,12 +552,12 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                   onChanged: (query) {
                                     onChange(query);
                                   },
-                                  labelText: 'Төгрөг',
+                                  labelText: 'Иен',
                                   name: 'mnt',
                                   focusNode: mnt,
                                   borderColor: isValueError ? redError : blue,
                                   colortext: dark,
-                                  hintText: '₮0',
+                                  hintText: '¥0',
                                   hintTextColor: hintColor,
                                   inputType: TextInputType.number,
                                   controller: mntController,
@@ -444,7 +567,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                       SizedBox(
                                         width: 16,
                                       ),
-                                      SvgPicture.asset('assets/svg/mn.svg'),
+                                      SvgPicture.asset('assets/svg/jp.svg'),
                                       SizedBox(
                                         width: 12,
                                       ),
@@ -464,7 +587,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                         top: 4,
                                       ),
                                       child: Text(
-                                        'Арилжих хамгийн бага утга ₮ ${Utils().formatTextCustom(currency.minLimit)}.',
+                                        'Арилжих хамгийн бага утга ¥ ${Utils().formatTextCustom(index == true ? currencyBuy.minLimit : currencySell.minLimit)}.',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
@@ -507,42 +630,6 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                       ),
                                     )
                                   : SizedBox(),
-                              // Padding(
-                              //   padding: const EdgeInsets.only(
-                              //     left: 16,
-                              //     right: 16,
-                              //     top: 16,
-                              //   ),
-                              //   child: Container(
-                              //     decoration: BoxDecoration(
-                              //       borderRadius: BorderRadius.circular(12),
-                              //       border:
-                              //           Border.all(color: borderColor, width: 1),
-                              //     ),
-                              //     child: Padding(
-                              //       padding: const EdgeInsets.symmetric(
-                              //         horizontal: 16,
-                              //         vertical: 13,
-                              //       ),
-                              //       child: Row(
-                              //         children: [
-                              //           Image.asset('assets/images/mn.png'),
-                              //           SizedBox(
-                              //             width: 12,
-                              //           ),
-                              //           Column(
-                              //             crossAxisAlignment:
-                              //                 CrossAxisAlignment.start,
-                              //             children: [
-                              //               Text('Төгрөг  / лимит: 25,000,000 /'),
-                              //               Text('₮ 1,000,000'),
-                              //             ],
-                              //           )
-                              //         ],
-                              //       ),
-                              //     ),
-                              //   ),
-                              // ),
                               SizedBox(
                                 height: 4,
                               ),
@@ -574,13 +661,13 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                 child: AnimatedTextField(
                                   floatLabel: FloatingLabelBehavior.always,
                                   readOnly: true,
-                                  labelText: 'Иен',
+                                  labelText: 'Төгрөг',
                                   name: 'yen',
                                   focusNode: yen,
                                   borderColor: blue,
                                   colortext: dark,
                                   controller: jpnController,
-                                  hintText: '¥0',
+                                  hintText: '₮0',
                                   hintTextColor: hintColor,
                                   prefixIcon: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -588,7 +675,7 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                       SizedBox(
                                         width: 16,
                                       ),
-                                      SvgPicture.asset('assets/svg/jp.svg'),
+                                      SvgPicture.asset('assets/svg/mn.svg'),
                                       SizedBox(
                                         width: 12,
                                       ),
@@ -597,74 +684,6 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                 ),
                               ),
                               SizedBox(height: 5),
-                              // Padding(
-                              //   padding: const EdgeInsets.only(
-                              //     left: 16,
-                              //     right: 16,
-                              //     bottom: 16,
-                              //   ),
-                              //   child: Container(
-                              //     decoration: BoxDecoration(
-                              //       borderRadius: BorderRadius.circular(12),
-                              //       border: Border.all(color: borderColor),
-                              //     ),
-                              //     child: NotAnimatedFormField(
-                              //       labelText: 'Иен  / лимит: 5,000,000 /',
-                              //       name: 'yen',
-                              //       colortext: dark,
-                              //       hintText: '¥0',
-                              //       hintTextColor: hintColor,
-                              //       prefixIcon: Row(
-                              //         mainAxisSize: MainAxisSize.min,
-                              //         children: [
-                              //           SizedBox(
-                              //             width: 16,
-                              //           ),
-                              //           SvgPicture.asset('assets/svg/jp.svg'),
-                              //           SizedBox(
-                              //             width: 12,
-                              //           ),
-                              //         ],
-                              //       ),
-                              //     ),
-                              //   ),
-                              // ),
-                              // Padding(
-                              //   padding: const EdgeInsets.only(
-                              //     left: 16,
-                              //     right: 16,
-                              //     bottom: 16,
-                              //   ),
-                              //   child: Container(
-                              //     decoration: BoxDecoration(
-                              //       borderRadius: BorderRadius.circular(12),
-                              //       border:
-                              //           Border.all(color: borderColor, width: 1),
-                              //     ),
-                              //     child: Padding(
-                              //       padding: const EdgeInsets.symmetric(
-                              //         horizontal: 16,
-                              //         vertical: 13,
-                              //       ),
-                              //       child: Row(
-                              //         children: [
-                              //           Image.asset('assets/images/mn.png'),
-                              //           SizedBox(
-                              //             width: 12,
-                              //           ),
-                              //           Column(
-                              //             crossAxisAlignment:
-                              //                 CrossAxisAlignment.start,
-                              //             children: [
-                              //               Text('Иен  / лимит: 5,000,000 /'),
-                              //               Text('¥ 46,324'),
-                              //             ],
-                              //           )
-                              //         ],
-                              //       ),
-                              //     ),
-                              //   ),
-                              // ),
                             ],
                           ),
                         ),
@@ -674,21 +693,23 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                         Text(
                           isLoadingData == true
                               ? '1 JPY = 0 MNT'
-                              : '1 JPY = ${currency.get} MNT',
+                              : '1 JPY = ${index == true ? currencyBuy.sell : currencyBuy.get} MNT',
                           style: TextStyle(
-                              color: dark,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600),
+                            color: dark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         SizedBox(
                           height: 8,
                         ),
                         Text(
-                          'Шимтгэл: ¥ ${Utils().formatTextCustom(dataReceive.fee ?? 0)}',
+                          'Шимтгэл: ₮ ${Utils().formatTextCustom(dataReceive.fee ?? 0)}',
                           style: TextStyle(
-                              color: dark,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600),
+                            color: dark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         SizedBox(
                           height: 16,
@@ -918,6 +939,9 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                                                 arguments:
                                                     OrderDetailPageArguments(
                                                   data: data,
+                                                  listenController:
+                                                      listenController,
+                                                  notifyData: '',
                                                 ),
                                               );
                                             },
@@ -1810,8 +1834,33 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                   SizedBox(
                     height: 8,
                   ),
+                  index == true
+                      ? Text(
+                          'Авах дүн: ¥ ${mntController.text}',
+                          style: TextStyle(
+                            color: dark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Зарах дүн: ¥ ${mntController.text}',
+                              style: TextStyle(
+                                color: dark,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                  SizedBox(
+                    height: 8,
+                  ),
                   Text(
-                    'Шимтгэл: ¥ ${Utils().formatTextCustom(dataReceive.fee)}',
+                    'Шимтгэл: ₮ ${Utils().formatTextCustom(dataReceive.fee)}',
                     style: TextStyle(
                       color: dark,
                       fontSize: 14,
@@ -1821,25 +1870,23 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                   SizedBox(
                     height: 8,
                   ),
-                  Text(
-                    'Авах дүн: ₮ ${mntController.text}',
-                    style: TextStyle(
-                      color: dark,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(
-                    height: 8,
-                  ),
-                  Text(
-                    'Төлөх дүн: ¥ ${Utils().formatCurrencyCustom(dataReceive.totalAmount ?? 0)}',
-                    style: TextStyle(
-                      color: dark,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  index == true
+                      ? Text(
+                          'Төлөх дүн: ${index == true ? '₮' : '¥'} ${Utils().formatCurrencyCustom(dataReceive.totalAmount ?? 0)}',
+                          style: TextStyle(
+                            color: dark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        )
+                      : Text(
+                          'Авах дүн: ₮ ${Utils().formatCurrencyCustom(dataReceive.totalAmount ?? 0)}',
+                          style: TextStyle(
+                            color: dark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                   SizedBox(
                     height: 24,
                   ),
@@ -1858,9 +1905,12 @@ class _ExchangePageState extends State<ExchangePage> with AfterLayoutMixin {
                             newexchangePurpose: purpose,
                           );
                           final res = mntController.text.replaceAll(',', '');
+                          final res1 = jpnController.text.replaceAll(',', '');
+
                           tools.updateAll(
+                            isSell: index == true ? true : false,
                             newmnt: num.parse(res),
-                            newcurrency: jpnController.text,
+                            newcurrency: num.parse(res1),
                             newtoValue: dataReceive.toValue.toString(),
                             newtotalAmount: dataReceive.totalAmount!,
                             newfee: dataReceive.fee!,

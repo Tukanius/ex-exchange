@@ -15,6 +15,7 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:wx_exchange_flutter/api/auth_api.dart';
 import 'package:wx_exchange_flutter/api/exchange_api.dart';
 import 'package:wx_exchange_flutter/api/user_api.dart';
+import 'package:wx_exchange_flutter/components/controller/listen.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/components/history_button/history_button.dart';
 import 'package:wx_exchange_flutter/components/loader/loader.dart';
@@ -73,6 +74,7 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
   bool tradeSubmit = false;
   Contract contract = Contract();
   JpyCurrency currency = JpyCurrency();
+  ListenController listenController = ListenController();
 
   @override
   void initState() {
@@ -861,6 +863,9 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                                                 arguments:
                                                     TransferDetailPageArguments(
                                                   data: data,
+                                                  listenController:
+                                                      listenController,
+                                                  notifyData: '',
                                                 ),
                                               );
                                             },
@@ -1844,10 +1849,12 @@ class _ExchangePageState extends State<TransferPage> with AfterLayoutMixin {
                               );
                               final res =
                                   mntController.text.replaceAll(',', '');
-
+                              final res1 =
+                                  jpnController.text.replaceAll(',', '');
                               tools.updateAll(
+                                isSell: true,
                                 newmnt: num.parse(res),
-                                newcurrency: jpnController.text,
+                                newcurrency: num.parse(res1),
                                 newtoValue: dataReceive.toValue.toString(),
                                 newtotalAmount: dataReceive.totalAmount!,
                                 newfee: dataReceive.fee!,

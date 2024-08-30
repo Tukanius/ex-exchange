@@ -101,4 +101,9 @@ class UserProvider extends ChangeNotifier {
     var res = await UserApi().accountDelete(data);
     return res;
   }
+
+  updateToken(String data) async {
+    var res = await UserApi().updateDeviceToken(data);
+    return res;
+  }
 }

@@ -2,17 +2,18 @@
 
 import 'dart:async';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:wx_exchange_flutter/models/general.dart';
 import 'package:wx_exchange_flutter/provider/general_provider.dart';
+import 'package:wx_exchange_flutter/provider/user_provider.dart';
 import 'package:wx_exchange_flutter/src/exchange_page/exchange_page.dart';
 import 'package:wx_exchange_flutter/src/history_page/history_page.dart';
 import 'package:wx_exchange_flutter/src/notification_page/notification_page.dart';
-import 'package:wx_exchange_flutter/src/transfer_page/trans.dart';
-// import 'package:wx_exchange_flutter/src/transfer_page/transfer_page.dart';
 import 'package:wx_exchange_flutter/src/profile_page/profile_page.dart';
+import 'package:wx_exchange_flutter/src/transfer_page/trans.dart';
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
@@ -37,6 +38,8 @@ class _MainPageState extends State<MainPage> {
   bool isLoading = true;
   final ScrollController _scrollController = ScrollController();
   General general = General();
+  bool tokenRefreshed = false;
+  String? deviceToken;
 
   static const List<Widget> currentPages = [
     ExchangePage(),
@@ -47,12 +50,37 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     initialize();
+    initFireBase();
     selectedIndex = widget.initialIndex;
     KeyboardVisibilityController().onChange.listen((bool visible) {
       setState(() {
         _isKeyboardVisible = visible;
       });
     });
+  }
+
+  initFireBase() async {
+    deviceToken = await getDeviceToken();
+    print('====CHECKDEVICETOKEN=====');
+    print(deviceToken);
+    print('====CHECKDEVICETOKEN=====');
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+      setState(() {
+        deviceToken = newToken;
+        tokenRefreshed = true;
+        var res = Provider.of<UserProvider>(context, listen: false)
+            .updateToken(deviceToken!);
+        print(res);
+      });
+    });
+  }
+
+  Future getDeviceToken() async {
+    FirebaseMessaging.instance.requestPermission();
+    FirebaseMessaging _fireBaseMessage = FirebaseMessaging.instance;
+    String? deviceToken = await _fireBaseMessage.getToken();
+
+    return (deviceToken == null) ? "" : deviceToken;
   }
 
   Future<void> initialize() async {

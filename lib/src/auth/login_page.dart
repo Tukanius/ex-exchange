@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:async';
-
 import 'package:after_layout/after_layout.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +14,7 @@ import 'package:wx_exchange_flutter/main.dart';
 import 'package:wx_exchange_flutter/models/user.dart';
 import 'package:wx_exchange_flutter/provider/user_provider.dart';
 import 'package:wx_exchange_flutter/services/dialog.dart';
-import 'package:wx_exchange_flutter/services/notify_service.dart';
+// import 'package:wx_exchange_flutter/services/notify_service.dart';
 import 'package:wx_exchange_flutter/src/auth/check-biometric.dart';
 import 'package:wx_exchange_flutter/src/auth/foget_password_page.dart';
 import 'package:wx_exchange_flutter/src/auth/register_page.dart';
@@ -55,7 +54,7 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
   String bioType = "";
   bool saveIsUsername = false;
   String? errorUserName;
-  String deviceToken = '';
+  String? deviceToken;
   bool isLoadingPage = false;
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) async {
@@ -97,20 +96,7 @@ class _LoginPageState extends State<LoginPage> with AfterLayoutMixin {
   Future getDeviceToken() async {
     FirebaseMessaging.instance.requestPermission();
     FirebaseMessaging _fireBaseMessage = FirebaseMessaging.instance;
-    String? deviceToken = await _fireBaseMessage.getToken();
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Message data: ${message.data}');
-      if (message.notification != null) {
-        print('ehelsee');
-        NotifyService().showNotification(
-          title: message.notification?.title,
-          body: message.notification?.body,
-        );
-        print('${message.notification?.title}');
-        print('${message.notification?.body}');
-        print('duusasaa');
-      }
-    });
+    deviceToken = await _fireBaseMessage.getToken();
     return (deviceToken == null) ? "" : deviceToken;
   }
 

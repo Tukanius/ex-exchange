@@ -83,10 +83,15 @@ class _PaymentDetailPageState extends State<PaymentDetailPage>
             centerTitle: true,
             leading: GestureDetector(
               onTap: () {
-                Navigator.of(context).pushNamed(
-                  MainPage.routeName,
-                  arguments: MainPageArguments(initialIndex: 0),
-                );
+                widget.data.trade == "EXCHANGE"
+                    ? Navigator.of(context).pushNamed(
+                        MainPage.routeName,
+                        arguments: MainPageArguments(initialIndex: 0),
+                      )
+                    : Navigator.of(context).pushNamed(
+                        MainPage.routeName,
+                        arguments: MainPageArguments(initialIndex: 1),
+                      );
               },
               child: Container(
                 margin: EdgeInsets.only(left: 5),
@@ -387,14 +392,25 @@ class _PaymentDetailPageState extends State<PaymentDetailPage>
                                     SizedBox(
                                       height: 4,
                                     ),
-                                    Text(
-                                      '${widget.type == "EXCHANGE" ? '¥' : "₮"}  ${Utils().formatCurrencyCustom(widget.data.amount)}',
-                                      style: TextStyle(
-                                        color: hintText,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                                    widget.type == "TRANSFER"
+                                        ? Text(
+                                            '₮ ${Utils().formatCurrencyCustom(widget.data.amount)}',
+                                            style: TextStyle(
+                                              color: hintText,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          )
+                                        : widget.type == "EXCHANGE"
+                                            ? Text(
+                                                '${widget.data.getType == "BUY" ? "₮" : "¥"}  ${Utils().formatCurrencyCustom(widget.data.amount)}',
+                                                style: TextStyle(
+                                                  color: hintText,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              )
+                                            : SizedBox()
                                   ],
                                 ),
                                 GestureDetector(
@@ -480,10 +496,17 @@ class _PaymentDetailPageState extends State<PaymentDetailPage>
                         SizedBox(height: 24),
                         CustomButton(
                           onClick: () {
-                            Navigator.of(context).pushNamed(
-                              MainPage.routeName,
-                              arguments: MainPageArguments(initialIndex: 1),
-                            );
+                            widget.data.trade == "EXCHANGE"
+                                ? Navigator.of(context).pushNamed(
+                                    MainPage.routeName,
+                                    arguments:
+                                        MainPageArguments(initialIndex: 0),
+                                  )
+                                : Navigator.of(context).pushNamed(
+                                    MainPage.routeName,
+                                    arguments:
+                                        MainPageArguments(initialIndex: 1),
+                                  );
                           },
                           buttonColor: blue.withOpacity(0.1),
                           isLoading: false,

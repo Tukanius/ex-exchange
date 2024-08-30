@@ -8,6 +8,7 @@ JpyCurrency _$JpyCurrencyFromJson(Map<String, dynamic> json) {
     sell: json['sell'] != null ? json['sell'] as num : null,
     minLimit: json['minLimit'] != null ? json['minLimit'] as num : null,
     maxLimit: json['maxLimit'] != null ? json['maxLimit'] as num : null,
+    getType: json['getType'] != null ? json['getType'] as String : null,
   );
 }
 
@@ -19,6 +20,7 @@ Map<String, dynamic> _$JpyCurrencyToJson(JpyCurrency instance) {
   if (instance.sell != null) json['sell'] = instance.sell;
   if (instance.minLimit != null) json['minLimit'] = instance.minLimit;
   if (instance.maxLimit != null) json['maxLimit'] = instance.maxLimit;
+  if (instance.getType != null) json['getType'] = instance.getType;
 
   return json;
 }

@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:wx_exchange_flutter/api/exchange_api.dart';
+import 'package:wx_exchange_flutter/api/user_api.dart';
+import 'package:wx_exchange_flutter/components/controller/listen.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/models/account_transfer.dart';
 import 'package:wx_exchange_flutter/models/history_model.dart';
@@ -17,15 +19,26 @@ import 'package:wx_exchange_flutter/widget/ui/color.dart';
 
 class OrderDetailPageArguments {
   TradeHistory data;
+  ListenController listenController;
+  String notifyData;
   OrderDetailPageArguments({
     required this.data,
+    required this.listenController,
+    required this.notifyData,
   });
 }
 
 class OrderDetailPage extends StatefulWidget {
   final TradeHistory data;
+  final ListenController listenController;
+  final String notifyData;
   static const routeName = "OrderDetailPage";
-  const OrderDetailPage({super.key, required this.data});
+  const OrderDetailPage({
+    super.key,
+    required this.data,
+    required this.listenController,
+    required this.notifyData,
+  });
 
   @override
   State<OrderDetailPage> createState() => _OrderDetailPageState();
@@ -36,40 +49,45 @@ class _OrderDetailPageState extends State<OrderDetailPage>
   late String createdDate = Utils.formatUTC8(widget.data.createdAt!);
   AccountTransfer payData = AccountTransfer();
   String? matchedPurpose;
-  bool isLoading = false;
+  bool isLoading = true;
+  bool isLoadingButton = false;
   @override
-  FutureOr<void> afterFirstLayout(BuildContext context) {
+  FutureOr<void> afterFirstLayout(BuildContext context) async {
     var general = Provider.of<GeneralProvider>(context, listen: false).general;
-    try {
-      setState(() {
-        isLoading = true;
-      });
-      for (var purposeType in general.purposeTypes!) {
-        if (purposeType.code == widget.data.purpose) {
-          matchedPurpose = purposeType.name;
-          break;
-        }
+    for (var purposeType in general.purposeTypes!) {
+      if (purposeType.code == widget.data.purpose) {
+        matchedPurpose = purposeType.name;
+        break;
       }
-      setState(() {
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      print(e.toString());
     }
+    if (widget.notifyData != '') {
+      var res = await UserApi().seenNot(widget.notifyData);
+      print(res);
+      widget.listenController.refreshList("refresh");
+    }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   onSubmit() async {
     try {
+      setState(() {
+        isLoadingButton = true;
+      });
       payData = await ExchangeApi().getPay(widget.data.id!);
       Navigator.of(context).pushNamed(
         PaymentDetailPage.routeName,
         arguments: PaymentDetailPageArguments(data: payData, type: "EXCHANGE"),
       );
+      setState(() {
+        isLoadingButton = false;
+      });
     } catch (e) {
       print(e.toString());
+      setState(() {
+        isLoadingButton = false;
+      });
     }
   }
 
@@ -240,21 +258,21 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                         top: 16,
                       ),
                       child: AnimatedTextField(
-                        labelText: 'Төгрөг',
+                        labelText: 'Иен',
                         name: 'mnt',
                         focusNode: mnt,
                         borderColor: blue,
                         colortext: dark,
                         readOnly: true,
                         initialValue:
-                            '₮ ${Utils().formatTextCustom(widget.data.fromAmount)}',
+                            '¥ ${Utils().formatTextCustom(widget.data.fromAmount)}',
                         prefixIcon: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             SizedBox(
                               width: 16,
                             ),
-                            SvgPicture.asset('assets/svg/mn.svg'),
+                            SvgPicture.asset('assets/svg/jp.svg'),
                             SizedBox(
                               width: 12,
                             ),
@@ -291,7 +309,7 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                         bottom: 16,
                       ),
                       child: AnimatedTextField(
-                        labelText: 'Иен',
+                        labelText: 'Төгрөг',
                         name: 'yen',
                         focusNode: yen,
                         borderColor: blue,
@@ -304,7 +322,7 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                             SizedBox(
                               width: 16,
                             ),
-                            SvgPicture.asset('assets/svg/jp.svg'),
+                            SvgPicture.asset('assets/svg/mn.svg'),
                             SizedBox(
                               width: 12,
                             ),
@@ -491,7 +509,7 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                 height: 8,
               ),
               Text(
-                'Шимтгэл: ¥ ${Utils().formatTextCustom(widget.data.fee)}',
+                'Шимтгэл: ₮ ${Utils().formatTextCustom(widget.data.fee)}',
                 style: TextStyle(
                   color: dark,
                   fontSize: 14,
@@ -501,14 +519,23 @@ class _OrderDetailPageState extends State<OrderDetailPage>
               SizedBox(
                 height: 8,
               ),
-              Text(
-                'Хүлээн авах дүн: ₮ ${Utils().formatTextCustom(widget.data.fromAmount)}',
-                style: TextStyle(
-                  color: dark,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
+              widget.data.getType == "BUY"
+                  ? Text(
+                      'Хүлээн авах дүн: ¥ ${Utils().formatCurrencyCustom(widget.data.fromAmount)}',
+                      style: TextStyle(
+                        color: dark,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    )
+                  : Text(
+                      'Нийт төлөх дүн: ¥ ${Utils().formatCurrencyCustom(widget.data.fromAmount)}',
+                      style: TextStyle(
+                        color: dark,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
               SizedBox(
                 height: 16,
               ),
@@ -523,14 +550,23 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Нийт төлөх дүн:',
-                        style: TextStyle(
-                          color: blue.withOpacity(0.75),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
+                      widget.data.getType == "BUY"
+                          ? Text(
+                              'Нийт төлөх дүн:',
+                              style: TextStyle(
+                                color: blue.withOpacity(0.75),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            )
+                          : Text(
+                              'Хүлээн авах дүн:',
+                              style: TextStyle(
+                                color: blue.withOpacity(0.75),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
                       Text(
                         '₮ ${Utils().formatCurrencyCustom(widget.data.totalAmount)}',
                         style: TextStyle(
@@ -615,7 +651,7 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                         onSubmit();
                       },
                       buttonColor: blue,
-                      isLoading: false,
+                      isLoading: isLoadingButton,
                       labelText: 'Төлбөр төлөх',
                       textColor: white,
                     )

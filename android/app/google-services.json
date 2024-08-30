@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "223469036400",
-    "project_id": "wx-exchange-46853",
-    "storage_bucket": "wx-exchange-46853.appspot.com"
+    "project_number": "485736802481",
+    "project_id": "wx-exchange-90487",
+    "storage_bucket": "wx-exchange-90487.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:223469036400:android:8e10064eb91301dd2765b5",
+        "mobilesdk_app_id": "1:485736802481:android:515d7df2aacf69aa1eda90",
         "android_client_info": {
           "package_name": "com.example.wx_exchange_flutter"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCYdALNXY0T6L7gx7DFHWuI2OAvR1jlahY"
+          "current_key": "AIzaSyCQHDJx4wsdXNpJi81xEUJay-euzmU8edo"
         }
       ],
       "services": {

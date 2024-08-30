@@ -90,9 +90,9 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
         }
       }
       data.type = "EXCHANGE";
-      data.fromCurrency = "MNT";
       data.fromAmount = tools.mnt;
-      data.toCurrency = "JPY";
+      data.fromCurrency = "JPY";
+      data.toCurrency = "MNT";
       data.toAmount = num.parse(tools.toAmount);
       data.rate = num.parse(tools.toValue);
       data.fee = tools.fee;
@@ -101,6 +101,7 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
       data.accountNumber = tools.AccountNumber;
       data.accountName = tools.AccountName;
       data.phone = tools.phone;
+      data.getType = tools.sell == true ? "BUY" : "SELL";
       // data.name = tools.receiver;
       // data.bankCardNo = tools.bankid;
       data.sign = base64Encode(widget.signature);
@@ -184,13 +185,13 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                         top: 16,
                       ),
                       child: AnimatedTextField(
-                        labelText: 'Төгрөг',
+                        labelText: "Иен",
                         name: 'mnt',
                         focusNode: mnt,
                         borderColor: blue,
                         colortext: dark,
                         initialValue:
-                            '₮ ${Utils().formatTextCustom(tools.mnt)}',
+                            '¥  ${Utils().formatTextCustom(tools.mnt)}',
                         readOnly: true,
                         prefixIcon: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -198,7 +199,7 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                             SizedBox(
                               width: 16,
                             ),
-                            SvgPicture.asset('assets/svg/mn.svg'),
+                            SvgPicture.asset('assets/svg/jp.svg'),
                             SizedBox(
                               width: 12,
                             ),
@@ -235,20 +236,21 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                         bottom: 16,
                       ),
                       child: AnimatedTextField(
-                        labelText: 'Иен',
+                        labelText: 'Төгрөг',
                         readOnly: true,
                         name: 'yen',
                         focusNode: yen,
                         borderColor: blue,
                         colortext: dark,
-                        initialValue: '¥ ${tools.currency}',
+                        initialValue:
+                            '₮ ${Utils().formatCurrencyCustom(tools.currency)}',
                         prefixIcon: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             SizedBox(
                               width: 16,
                             ),
-                            SvgPicture.asset('assets/svg/jp.svg'),
+                            SvgPicture.asset('assets/svg/mn.svg'),
                             SizedBox(
                               width: 12,
                             ),
@@ -435,7 +437,7 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                 height: 8,
               ),
               Text(
-                'Шимтгэл: ¥ ${Utils().formatTextCustom(tools.fee)}',
+                'Шимтгэл: ₮ ${Utils().formatTextCustom(tools.fee)}',
                 style: TextStyle(
                   color: dark,
                   fontSize: 14,
@@ -445,14 +447,23 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
               SizedBox(
                 height: 8,
               ),
-              Text(
-                'Хүлээн авах дүн: ₮ ${Utils().formatTextCustom(tools.mnt)}',
-                style: TextStyle(
-                  color: dark,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
+              tools.sell == true
+                  ? Text(
+                      'Хүлээн авах дүн: ¥ ${Utils().formatCurrencyCustom(tools.mnt)}',
+                      style: TextStyle(
+                        color: dark,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    )
+                  : Text(
+                      'Нийт төлөх дүн: ¥ ${Utils().formatCurrencyCustom(tools.mnt)}',
+                      style: TextStyle(
+                        color: dark,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
               SizedBox(
                 height: 16,
               ),
@@ -463,29 +474,37 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                   border: Border.all(color: blue, width: 1),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Нийт төлөх дүн:',
-                        style: TextStyle(
-                          color: blue.withOpacity(0.75),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        tools.sell == true
+                            ? Text(
+                                'Нийт төлөх дүн:',
+                                style: TextStyle(
+                                  color: blue.withOpacity(0.75),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              )
+                            : Text(
+                                'Хүлээн авах дүн:',
+                                style: TextStyle(
+                                  color: blue.withOpacity(0.75),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                        Text(
+                          '₮ ${Utils().formatCurrencyCustom(tools.totalAmount)}',
+                          style: TextStyle(
+                            color: blue,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '¥ ${Utils().formatCurrencyCustom(tools.totalAmount)}',
-                        style: TextStyle(
-                          color: blue,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                      ],
+                    )),
               ),
               SizedBox(
                 height: 16,
@@ -558,7 +577,7 @@ class _OrderInfoPageState extends State<OrderInfoPage> {
                   onSubmit(tools, general);
                 },
                 buttonColor: blue,
-                isLoading: false,
+                isLoading: isLoading,
                 labelText: 'Төлбөр төлөх',
                 textColor: white,
               ),

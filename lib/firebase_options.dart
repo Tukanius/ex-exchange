@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCYdALNXY0T6L7gx7DFHWuI2OAvR1jlahY',
-    appId: '1:223469036400:android:8e10064eb91301dd2765b5',
-    messagingSenderId: '223469036400',
-    projectId: 'wx-exchange-46853',
-    storageBucket: 'wx-exchange-46853.appspot.com',
+    apiKey: 'AIzaSyCQHDJx4wsdXNpJi81xEUJay-euzmU8edo',
+    appId: '1:485736802481:android:515d7df2aacf69aa1eda90',
+    messagingSenderId: '485736802481',
+    projectId: 'wx-exchange-90487',
+    storageBucket: 'wx-exchange-90487.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDfMbmxHK38F2Q2O1OCuSBh-gw-U3quTuk',
-    appId: '1:223469036400:ios:004243d43a9375142765b5',
-    messagingSenderId: '223469036400',
-    projectId: 'wx-exchange-46853',
-    storageBucket: 'wx-exchange-46853.appspot.com',
+    apiKey: 'AIzaSyDEIE_HzwJOmGRwiq2jSuIEASSYGhNXvTI',
+    appId: '1:485736802481:ios:485a0bf1ad2fb9021eda90',
+    messagingSenderId: '485736802481',
+    projectId: 'wx-exchange-90487',
+    storageBucket: 'wx-exchange-90487.appspot.com',
     iosBundleId: 'wx.exchange.flutter',
   );
 }

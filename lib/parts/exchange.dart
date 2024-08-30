@@ -28,6 +28,7 @@ Exchange _$ExchangeFromJson(Map<String, dynamic> json) {
         json['branchName'] != null ? json['branchName'] as String : null,
     branchAddress:
         json['branchAddress'] != null ? json['branchAddress'] as String : null,
+    getType: json['getType'] != null ? json['getType'] as String : null,
   );
 }
 
@@ -58,6 +59,7 @@ Map<String, dynamic> _$ExchangeToJson(Exchange instance) {
 
   if (instance.branchAddress != null)
     json['branchAddress'] = instance.branchAddress;
+  if (instance.getType != null) json['getType'] = instance.getType;
 
   return json;
 }

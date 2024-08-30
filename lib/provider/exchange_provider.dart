@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class ExchangeProvider extends ChangeNotifier {
   num mnt = 0;
-  String currency = '0';
+  num currency = 0;
   String receiver = '';
   String bankid = '';
   String bank = '';
@@ -11,20 +11,21 @@ class ExchangeProvider extends ChangeNotifier {
   num totalAmount = 0;
   num fee = 0;
   String toAmount = '';
-
   String purpose = '';
   String nameEng = '';
   String idCardNo = '';
   String cityName = '';
   String bankCardNo = '';
+  bool sell = false;
 
   updateAll({
     required num newmnt,
-    required String newcurrency,
+    required num newcurrency,
     required String newtoValue,
     required num newtotalAmount,
     required num newfee,
     required String newtoAmount,
+    required bool isSell,
   }) {
     mnt = newmnt;
     currency = newcurrency;
@@ -32,6 +33,7 @@ class ExchangeProvider extends ChangeNotifier {
     totalAmount = newtotalAmount;
     fee = newfee;
     toAmount = newtoAmount;
+    sell = isSell;
     notifyListeners();
   }
 
@@ -74,7 +76,6 @@ class ExchangeProvider extends ChangeNotifier {
     BranchAddress = newBranchAddress;
     AccountName = newAccountName;
     tradePurpose = newPurpose;
-
     notifyListeners();
   }
 }

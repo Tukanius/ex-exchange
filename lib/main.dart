@@ -1,5 +1,5 @@
-// import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
@@ -38,8 +38,18 @@ import 'package:wx_exchange_flutter/widget/dialog/dialog_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await NotifyService().initNotify();
+
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    NotifyService().showNotification(
+      title: message.notification?.title,
+      body: message.notification?.body,
+    );
+  });
+
   locator.registerLazySingleton(() => DialogService());
   locator.registerLazySingleton(() => NavigationService());
 
@@ -174,6 +184,8 @@ class _MyAppState extends State<MyApp> {
                   return MaterialPageRoute(builder: (context) {
                     return TransferDetailPage(
                       data: arguments.data,
+                      listenController: arguments.listenController,
+                      notifyData: arguments.notifyData,
                     );
                   });
                 case OrderDetailPage.routeName:
@@ -182,6 +194,8 @@ class _MyAppState extends State<MyApp> {
                   return MaterialPageRoute(builder: (context) {
                     return OrderDetailPage(
                       data: arguments.data,
+                      listenController: arguments.listenController,
+                      notifyData: arguments.notifyData,
                     );
                   });
                 case ProfilePage.routeName:

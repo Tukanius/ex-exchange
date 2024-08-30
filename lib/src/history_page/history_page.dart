@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:wx_exchange_flutter/api/exchange_api.dart';
+import 'package:wx_exchange_flutter/components/controller/listen.dart';
 import 'package:wx_exchange_flutter/components/history_button/history_button.dart';
 import 'package:wx_exchange_flutter/components/refresher/refresher.dart';
 import 'package:wx_exchange_flutter/models/result.dart';
@@ -27,7 +28,7 @@ class _HistoryPageState extends State<HistoryPage> with AfterLayoutMixin {
   int currentIndex = 0;
   RefreshController refreshController =
       RefreshController(initialRefresh: false);
-
+  ListenController listenController = ListenController();
   @override
   afterFirstLayout(BuildContext context) async {
     try {
@@ -280,13 +281,21 @@ class _HistoryPageState extends State<HistoryPage> with AfterLayoutMixin {
                                             TransferDetailPage.routeName,
                                             arguments:
                                                 TransferDetailPageArguments(
-                                                    data: data),
+                                              data: data,
+                                              listenController:
+                                                  listenController,
+                                              notifyData: '',
+                                            ),
                                           );
                                         } else {
                                           Navigator.of(context).pushNamed(
                                             OrderDetailPage.routeName,
                                             arguments: OrderDetailPageArguments(
-                                                data: data),
+                                              data: data,
+                                              listenController:
+                                                  listenController,
+                                              notifyData: '',
+                                            ),
                                           );
                                         }
                                       },

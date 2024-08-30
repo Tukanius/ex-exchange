@@ -27,6 +27,7 @@ class TradeHistory {
   String? branchName;
   String? branchAddress;
   String? accountName;
+  String? getType;
 
   TradeHistory({
     this.id,
@@ -55,6 +56,7 @@ class TradeHistory {
     this.branchName,
     this.branchAddress,
     this.accountName,
+    this.getType,
   });
   static $fromJson(Map<String, dynamic> json) => _$TradeHistoryFromJson(json);
 

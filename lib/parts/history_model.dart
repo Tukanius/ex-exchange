@@ -37,6 +37,7 @@ TradeHistory _$TradeHistoryFromJson(Map<String, dynamic> json) {
         json['branchAddress'] != null ? json['branchAddress'] as String : null,
     accountName:
         json['accountName'] != null ? json['accountName'] as String : null,
+    getType: json['getType'] != null ? json['getType'] as String : null,
   );
 }
 
@@ -72,6 +73,7 @@ Map<String, dynamic> _$TradeHistoryToJson(TradeHistory instance) {
   if (instance.branchAddress != null)
     json['branchAddress'] = instance.branchAddress;
   if (instance.accountName != null) json['accountName'] = instance.accountName;
+  if (instance.getType != null) json['getType'] = instance.getType;
 
   return json;
 }

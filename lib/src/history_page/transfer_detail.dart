@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:wx_exchange_flutter/api/exchange_api.dart';
+import 'package:wx_exchange_flutter/api/user_api.dart';
+import 'package:wx_exchange_flutter/components/controller/listen.dart';
 import 'package:wx_exchange_flutter/components/custom_button/custom_button.dart';
 import 'package:wx_exchange_flutter/models/account_transfer.dart';
 import 'package:wx_exchange_flutter/models/history_model.dart';
@@ -16,16 +18,27 @@ import 'package:wx_exchange_flutter/widget/ui/animated_text_field/animated_textf
 import 'package:wx_exchange_flutter/widget/ui/color.dart';
 
 class TransferDetailPageArguments {
+  ListenController listenController;
   TradeHistory data;
+  String notifyData;
   TransferDetailPageArguments({
     required this.data,
+    required this.listenController,
+    required this.notifyData,
   });
 }
 
 class TransferDetailPage extends StatefulWidget {
   final TradeHistory data;
+  final ListenController listenController;
+  final String notifyData;
   static const routeName = "TransferDetailPage";
-  const TransferDetailPage({super.key, required this.data});
+  const TransferDetailPage({
+    super.key,
+    required this.data,
+    required this.listenController,
+    required this.notifyData,
+  });
 
   @override
   State<TransferDetailPage> createState() => _TransferDetailPageState();
@@ -34,29 +47,26 @@ class TransferDetailPage extends StatefulWidget {
 class _TransferDetailPageState extends State<TransferDetailPage>
     with AfterLayoutMixin {
   String? matchedPurpose;
-  bool isLoading = false;
+  bool isLoading = true;
+  bool isLoadingButton = false;
   @override
-  FutureOr<void> afterFirstLayout(BuildContext context) {
+  FutureOr<void> afterFirstLayout(BuildContext context) async {
     var general = Provider.of<GeneralProvider>(context, listen: false).general;
-    try {
-      setState(() {
-        isLoading = true;
-      });
-      for (var purposeType in general.purposeTypes!) {
-        if (purposeType.code == widget.data.purpose) {
-          matchedPurpose = purposeType.name;
-          break;
-        }
+
+    for (var purposeType in general.purposeTypes!) {
+      if (purposeType.code == widget.data.purpose) {
+        matchedPurpose = purposeType.name;
+        break;
       }
-      setState(() {
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      print(e.toString());
     }
+    if (widget.notifyData != '') {
+      var res = await UserApi().seenNot(widget.notifyData);
+      print(res);
+      widget.listenController.refreshList("refresh");
+    }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   late String createdDate = Utils.formatUTC8(widget.data.createdAt!);
@@ -64,13 +74,22 @@ class _TransferDetailPageState extends State<TransferDetailPage>
 
   onSubmit() async {
     try {
+      setState(() {
+        isLoadingButton = true;
+      });
       payData = await ExchangeApi().getPay(widget.data.id!);
       Navigator.of(context).pushNamed(
         PaymentDetailPage.routeName,
         arguments: PaymentDetailPageArguments(data: payData, type: "TRANSFER"),
       );
+      setState(() {
+        isLoadingButton = false;
+      });
     } catch (e) {
       print(e.toString());
+      setState(() {
+        isLoadingButton = false;
+      });
     }
   }
 
@@ -644,7 +663,7 @@ class _TransferDetailPageState extends State<TransferDetailPage>
                               onSubmit();
                             },
                             buttonColor: blue,
-                            isLoading: false,
+                            isLoading: isLoadingButton,
                             labelText: 'Төлбөр төлөх',
                             textColor: white,
                           )

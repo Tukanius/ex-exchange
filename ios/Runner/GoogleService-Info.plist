@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyDfMbmxHK38F2Q2O1OCuSBh-gw-U3quTuk</string>
+	<string>AIzaSyDEIE_HzwJOmGRwiq2jSuIEASSYGhNXvTI</string>
 	<key>GCM_SENDER_ID</key>
-	<string>223469036400</string>
+	<string>485736802481</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>wx.exchange.flutter</string>
 	<key>PROJECT_ID</key>
-	<string>wx-exchange-46853</string>
+	<string>wx-exchange-90487</string>
 	<key>STORAGE_BUCKET</key>
-	<string>wx-exchange-46853.appspot.com</string>
+	<string>wx-exchange-90487.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:223469036400:ios:004243d43a9375142765b5</string>
+	<string>1:485736802481:ios:485a0bf1ad2fb9021eda90</string>
 </dict>
 </plist>

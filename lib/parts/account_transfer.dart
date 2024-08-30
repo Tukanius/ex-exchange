@@ -9,6 +9,12 @@ AccountTransfer _$AccountTransferFromJson(Map<String, dynamic> json) {
     description:
         json['description'] != null ? json['description'] as String : null,
     amount: json['amount'] != null ? json['amount'] as num : null,
+    fromCurrency:
+        json['fromCurrency'] != null ? json['fromCurrency'] as String : null,
+    toCurrency:
+        json['toCurrency'] != null ? json['toCurrency'] as String : null,
+    trade: json['trade'] != null ? json['trade'] as String : null,
+    getType: json['getType'] != null ? json['getType'] as String : null,
   );
 }
 
@@ -20,6 +26,11 @@ Map<String, dynamic> _$AccountTransferToJson(AccountTransfer instance) {
   if (instance.accountNo != null) json['accountNo'] = instance.accountNo;
   if (instance.description != null) json['description'] = instance.description;
   if (instance.amount != null) json['amount'] = instance.amount;
+  if (instance.fromCurrency != null)
+    json['fromCurrency'] = instance.fromCurrency;
+  if (instance.toCurrency != null) json['toCurrency'] = instance.toCurrency;
+  if (instance.trade != null) json['trade'] = instance.trade;
+  if (instance.getType != null) json['getType'] = instance.getType;
 
   return json;
 }

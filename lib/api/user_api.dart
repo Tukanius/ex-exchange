@@ -46,4 +46,9 @@ class UserApi extends HttpRequest {
     var res = await put('/user/del', handler: false, data: data.toJson());
     return res;
   }
+
+  updateDeviceToken(String data) async {
+    var res = await put('/user/token$data', handler: false);
+    return res;
+  }
 }

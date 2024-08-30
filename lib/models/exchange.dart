@@ -20,6 +20,7 @@ class Exchange {
   String? swiftCode;
   String? branchName;
   String? branchAddress;
+  String? getType;
 
   Exchange({
     this.type,
@@ -41,6 +42,7 @@ class Exchange {
     this.swiftCode,
     this.branchName,
     this.branchAddress,
+    this.getType,
   });
   static $fromJson(Map<String, dynamic> json) => _$ExchangeFromJson(json);
 

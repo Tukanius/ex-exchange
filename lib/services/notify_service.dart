@@ -21,7 +21,9 @@ class NotifyService {
     await notificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse:
-          (NotificationResponse notificationResponse) async {},
+          (NotificationResponse notificationResponse) async {
+        print('====heloo====');
+      },
     );
   }
 

@@ -38,7 +38,7 @@ class _TradeHistoryButtonState extends State<TradeHistoryButton> {
               children: [
                 widget.data.type == "TRANSFER"
                     ? SvgPicture.asset('assets/svg/transfer_history.svg')
-                    : widget.data.tradeStatus == "SUCCESS"
+                    : widget.data.tradeStatus == "PAID"
                         ? SvgPicture.asset('assets/svg/trade_history_succ.svg')
                         : SvgPicture.asset('assets/svg/trade_history_pen.svg'),
                 SizedBox(
@@ -47,14 +47,63 @@ class _TradeHistoryButtonState extends State<TradeHistoryButton> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      ' ${widget.data.fromCurrency == 'MNT' ? '₮' : widget.data.fromCurrency == "JPY" ? '¥' : '₮'} ${Utils().formatText(widget.data.fromAmount)}',
-                      style: TextStyle(
-                        color: dark,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    widget.data.type == "TRANSFER"
+                        ? Text(
+                            '₮ ${Utils().formatText(widget.data.totalAmount)}',
+                            style: TextStyle(
+                              color: dark,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          )
+                        : widget.data.type == "EXCHANGE" &&
+                                widget.data.getType == "BUY"
+                            ? Text(
+                                '₮ ${Utils().formatText(widget.data.totalAmount)}',
+                                style: TextStyle(
+                                  color: dark,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              )
+                            : Text(
+                                '¥ ${Utils().formatText(widget.data.fromAmount)}',
+                                style: TextStyle(
+                                  color: dark,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                    SizedBox(
+                      height: 2,
                     ),
+                    widget.data.type == "TRANSFER"
+                        ? Text(
+                            'Мөнгөн гуйвуулга',
+                            style: TextStyle(
+                              color: dark,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          )
+                        : widget.data.type == "EXCHANGE" &&
+                                widget.data.getType == "BUY"
+                            ? Text(
+                                'Валют авах',
+                                style: TextStyle(
+                                  color: dark,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              )
+                            : Text(
+                                'Валют зарах',
+                                style: TextStyle(
+                                  color: dark,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
                     SizedBox(
                       height: 4,
                     ),
